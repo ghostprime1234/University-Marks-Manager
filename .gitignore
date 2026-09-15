@@ -38,3 +38,4 @@ check.py
 # Database dumps & local artifacts
 *.sql
 *.dump
+.cache_ggshield

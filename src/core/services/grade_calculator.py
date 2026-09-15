@@ -19,6 +19,7 @@ def _round2dp(val: float) -> float:
     return math.floor(val * 100 + 0.5) / 100
 
 WEIGHT_THRESHOLD = 40.0
+MIN_CATEGORY_THRESHOLD = 5
 
 
 def _derive_assessment_category(name: str, explicit_category: Any = None) -> str:
@@ -28,9 +29,32 @@ def _derive_assessment_category(name: str, explicit_category: Any = None) -> str
     return derived or name or "Assessments"
 
 
-def process_assessments(assessments: Sequence[Any], rules: Sequence[SubjectRule] | None = None) -> dict[str, Any]:
+def process_assessments(
+    assessments: Sequence[Any],
+    rules: Sequence[SubjectRule] | None = None,
+    min_category_threshold: int = MIN_CATEGORY_THRESHOLD,
+) -> dict[str, Any]:
+    """
+    Process and categorize assessments into standalone assessments and category groups.
+
+    Assessments with weight > WEIGHT_THRESHOLD or belonging to categories with
+    <= min_category_threshold entries remain ungrouped at the root level (standalone),
+    retaining their original type labels and individual weights. Dedicated category
+    groups are only formed when a category contains more than min_category_threshold entries.
+
+    Parameters:
+    - assessments (Sequence[Any]): Sequence of assessment objects or dicts.
+    - rules (Sequence[SubjectRule] | None): Optional subject rules for pattern-based category derivation.
+    - min_category_threshold (int): Minimum count threshold for forming a dedicated category group
+      (default: MIN_CATEGORY_THRESHOLD = 5).
+
+    Returns:
+    - dict[str, Any]: Dictionary containing:
+        - "standalone_assessments": List of individual assessments (each retaining name, weight, score, category)
+        - "grouped_assessments": Dict of category -> {"rows": [...], "weight": float, "score": float | None}
+    """
     standalone_assessments: list[dict[str, Any]] = []
-    grouped_assessments: dict[str, dict[str, Any]] = {}
+    candidate_groups: dict[str, dict[str, Any]] = {}
 
     rule_patterns: list[tuple[str, str]] = []
     for rule in rules or []:
@@ -47,11 +71,18 @@ def process_assessments(assessments: Sequence[Any], rules: Sequence[SubjectRule]
         return _derive_assessment_category(name, explicit_category)
 
     for index, assessment in enumerate(assessments, start=1):
-        name = getattr(assessment, "name", None) or getattr(assessment, "assessment", None) or f"Assessment {index}"
-        weight_val = getattr(assessment, "weight", None) or getattr(assessment, "mark_weight", 0.0)
-        score_val = getattr(assessment, "score", None) or getattr(assessment, "weighted_mark", None) or getattr(assessment, "unweighted_mark", None)
-        
-        category = _derive_category(name, getattr(assessment, "category", None))
+        if isinstance(assessment, dict):
+            name = assessment.get("name") or assessment.get("assessment") or f"Assessment {index}"
+            weight_val = assessment.get("weight") if assessment.get("weight") is not None else assessment.get("mark_weight", 0.0)
+            score_val = assessment.get("score") if assessment.get("score") is not None else assessment.get("weighted_mark", assessment.get("unweighted_mark"))
+            explicit_category = assessment.get("category")
+        else:
+            name = getattr(assessment, "name", None) or getattr(assessment, "assessment", None) or f"Assessment {index}"
+            weight_val = getattr(assessment, "weight", None) or getattr(assessment, "mark_weight", 0.0)
+            score_val = getattr(assessment, "score", None) or getattr(assessment, "weighted_mark", None) or getattr(assessment, "unweighted_mark", None)
+            explicit_category = getattr(assessment, "category", None)
+
+        category = _derive_category(name, explicit_category)
 
         # Fix: Ensure types are cast safely once
         weight = float(weight_val) if weight_val is not None else 0.0
@@ -68,7 +99,7 @@ def process_assessments(assessments: Sequence[Any], rules: Sequence[SubjectRule]
             standalone_assessments.append(row)
             continue
 
-        group = grouped_assessments.setdefault(
+        group = candidate_groups.setdefault(
             category,
             {"rows": [], "weight": 0.0, "score_total": 0.0, "scored_weight": 0.0},
         )
@@ -80,15 +111,22 @@ def process_assessments(assessments: Sequence[Any], rules: Sequence[SubjectRule]
             group["score_total"] += score
             group["scored_weight"] += weight
 
-    for category, group in grouped_assessments.items():
-        scored_weight = group.pop("scored_weight")
-        score_total = group.pop("score_total")
+    grouped_assessments: dict[str, dict[str, Any]] = {}
+    for category, group in candidate_groups.items():
+        if len(group["rows"]) > min_category_threshold:
+            scored_weight = group.pop("scored_weight")
+            score_total = group.pop("score_total")
 
-        group["score"] = (
-            round((score_total / scored_weight) * 100.0, 2)
-            if scored_weight > 0
-            else None
-)
+            group["score"] = (
+                round((score_total / scored_weight) * 100.0, 2)
+                if scored_weight > 0
+                else None
+            )
+            group["weight"] = round(group["weight"], 2)
+            grouped_assessments[category] = group
+        else:
+            for row in group["rows"]:
+                standalone_assessments.append(row)
 
     standalone_assessments.sort(key=lambda row: row["name"].lower())
 
@@ -98,8 +136,11 @@ def process_assessments(assessments: Sequence[Any], rules: Sequence[SubjectRule]
     }
 
 class GradeCalculator:
-    def __init__(self, session: Session):
+    MIN_CATEGORY_THRESHOLD: int = MIN_CATEGORY_THRESHOLD
+
+    def __init__(self, session: Session, min_category_threshold: int = MIN_CATEGORY_THRESHOLD):
         self.session = session
+        self.min_category_threshold = min_category_threshold
     
     def _print_sql(self, query, label="SQL"):
         """Helper to print raw SQL for debugging"""
@@ -327,9 +368,34 @@ class GradeCalculator:
         return round(gpa_weighted_sum / credit_sum, 2) if gpa_weighted_sum is not None else None
 
 
-    def calculate_subject_summary(self, subject: Subject) -> dict[str, Any]:
+    def calculate_subject_summary(
+        self,
+        subject: Subject,
+        min_category_threshold: int | None = None,
+    ) -> dict[str, Any]:
+        """
+        Calculate the complete marks summary and target grade goals for a subject.
+
+        Processes rules, final examinations, and general assignments. General assignments
+        with weight >= WEIGHT_THRESHOLD or belonging to categories with <= min_category_threshold
+        entries remain ungrouped at the root level (display_status: 'Standalone'), retaining
+        their original type labels and individual weights. Dedicated category groups
+        (display_status: 'Grouped') are only formed when a category contains more than
+        min_category_threshold entries (e.g., high-frequency weekly quizzes).
+
+        Parameters:
+        - subject (Subject): The Subject model instance to calculate summary for.
+        - min_category_threshold (int | None): Minimum count threshold for forming dedicated category groups.
+          If None, uses self.min_category_threshold (default: MIN_CATEGORY_THRESHOLD = 5).
+
+        Returns:
+        - dict[str, Any]: Contains 'summaries', 'grade_goals', 'total_achieved',
+          'remaining_weight', and 'is_fully_graded'.
+        """
         if not subject.id:
             return {"summaries": [], "grade_goals": []}
+
+        threshold = self.min_category_threshold if min_category_threshold is None else min_category_threshold
 
         # 1. Setup Data
         rules = self.session.execute(select(SubjectRule).where(col(SubjectRule.subject_id) == subject.id)).scalars().all()
@@ -345,6 +411,11 @@ class GradeCalculator:
                 return float(item.exam_mark) if item.exam_mark is not None else None
             score = getattr(item, "unweighted_mark", None)
             return float(score) if score is not None else None
+
+        def _is_item_scored(item: Any) -> bool:
+            if isinstance(item, Examination):
+                return item.exam_mark is not None
+            return getattr(item, "unweighted_mark", None) is not None or getattr(item, "weighted_mark", None) is not None
 
         def _item_weight(item: Any) -> float:
             if isinstance(item, Examination):
@@ -368,7 +439,7 @@ class GradeCalculator:
             
             matches.sort(key=lambda x: (x.unweighted_mark or 0), reverse=True)
             core_items = matches[:rule.max_count]
-            scored_core_items = [item for item in core_items if _item_score(item) is not None]
+            scored_core_items = [item for item in core_items if _is_item_scored(item)]
             scored_core_weight = sum(_item_weight(item) for item in scored_core_items)
             weighted_score = sum(_item_weighted_score(item) for item in scored_core_items)
             
@@ -378,6 +449,7 @@ class GradeCalculator:
             summary.append({
                 "type": "rule",
                 "label": rule.rule_label,
+                "category": rule.rule_label,
                 "count": len(core_items),
                 "unweighted_avg": (weighted_score / scored_core_weight) if scored_core_weight > 0 else None,
                 "total_weight": sum((a.mark_weight or 0) for a in core_items),
@@ -421,6 +493,7 @@ class GradeCalculator:
                 summary.append({
                     "type": "exam",
                     "label": "Final Examination",
+                    "category": "Exam",
                     "count": 1,
                     "unweighted_avg": round(unweighted, 4) if unweighted is not None else None,
                     "total_weight": weight,
@@ -435,53 +508,64 @@ class GradeCalculator:
         remaining = [a for a in all_assignments if a.id not in used_assignment_ids 
                     and not a.is_exam and not any(p in (a.assessment or "").lower() for p in rule_patterns)]
 
+        def _make_standalone_entry(a: Assignment, cat: str) -> dict[str, Any]:
+            a_weight = _item_weight(a)
+            a_score = _item_score(a)
+            if a_score is not None:
+                a_score_ratio = (a_score / 100.0) if a_score > 1.0 else a_score
+            elif getattr(a, "weighted_mark", None) is not None and a_weight > 0:
+                a_score_ratio = float(a.weighted_mark) / a_weight
+            else:
+                a_score_ratio = None
+
+            return {
+                "type": "general",
+                "label": a.assessment or cat or "Assessment",
+                "category": cat,
+                "count": 1,
+                "unweighted_avg": round(a_score_ratio, 4) if a_score_ratio is not None else None,
+                "total_weight": round(a_weight, 2),
+                "weighted_score": _round2dp(_item_weighted_score(a)),
+                "bonus_count": 0,  # Required by template
+                "display_status": "Standalone",
+                "has_scored_items": _is_item_scored(a),
+                "core_items": [a],
+            }
+
         grouped_general: dict[str, list[Assignment]] = {}
         for a in remaining:
             a_weight = _item_weight(a)
-            a_score = _item_score(a)
-            
-            # Normalize standalone score if legacy data has raw percentages > 1.0
-            if a_score is not None and a_score > 1.0:
-                a_score_ratio = a_score / 100.0
-            else:
-                a_score_ratio = a_score
+            cat = _derive_assessment_category(str(a.assessment or ""), getattr(a, "category", None))
 
             if a_weight >= WEIGHT_THRESHOLD:
-                summary.append({
-                    "type": "general",
-                    "label": a.assessment or "Assessment",
-                    "count": 1,
-                    "unweighted_avg": round(a_score_ratio, 4) if a_score_ratio is not None else None,
-                    "total_weight": round(a_weight, 2),
-                    "weighted_score": _round2dp(_item_weighted_score(a)),
-                    "bonus_count": 0,  # Required by template
-                    "display_status": "Standalone",
-                    "has_scored_items": a_score is not None,
-                    "core_items": [a],
-                })
+                summary.append(_make_standalone_entry(a, cat))
             else:
-                cat = _derive_assessment_category(str(a.assessment or ""), getattr(a, "category", None))
                 grouped_general.setdefault(cat, []).append(a)
 
         for category, items in grouped_general.items():
-            scored_items = [item for item in items if _item_score(item) is not None]
-            total_weight = sum(_item_weight(item) for item in items)
-            weighted_score = sum(_item_weighted_score(item) for item in scored_items)
-            scored_weight = sum(_item_weight(item) for item in scored_items)
-            unweighted_avg = (weighted_score / scored_weight) if scored_weight > 0 else None
-            
-            summary.append({
-                "type": "general",
-                "label": category,
-                "count": len(items),
-                "unweighted_avg": round(unweighted_avg, 4) if unweighted_avg is not None else None,
-                "total_weight": total_weight,
-                "weighted_score": _round2dp(weighted_score),
-                "bonus_count": 0,  # Required by template
-                "display_status": "Grouped",
-                "has_scored_items": bool(scored_items),
-                "core_items": items,
-            })
+            if len(items) > threshold:
+                scored_items = [item for item in items if _is_item_scored(item)]
+                total_weight = sum(_item_weight(item) for item in items)
+                weighted_score = sum(_item_weighted_score(item) for item in scored_items)
+                scored_weight = sum(_item_weight(item) for item in scored_items)
+                unweighted_avg = (weighted_score / scored_weight) if scored_weight > 0 else None
+                
+                summary.append({
+                    "type": "general",
+                    "label": category,
+                    "category": category,
+                    "count": len(items),
+                    "unweighted_avg": round(unweighted_avg, 4) if unweighted_avg is not None else None,
+                    "total_weight": round(total_weight, 2),
+                    "weighted_score": _round2dp(weighted_score),
+                    "bonus_count": 0,  # Required by template
+                    "display_status": "Grouped",
+                    "has_scored_items": bool(scored_items),
+                    "core_items": items,
+                })
+            else:
+                for a in items:
+                    summary.append(_make_standalone_entry(a, category))
 
         # 5. Determine whether every weighted item has a real (non-zero) mark.
         # Used by the template to decide whether to show the target-grade calculator
@@ -525,7 +609,7 @@ class GradeCalculator:
             total_achieved += float(row["weighted_score"] or 0.0)
 
             for item in row["core_items"]:
-                if _item_score(item) is None:
+                if not _is_item_scored(item):
                     remaining_weight_value += _item_weight(item)
 
         if not summary and db_total_mark is not None and db_total_mark > 0 and getattr(subject, "is_finalized", False) and not all_assignments:
@@ -571,14 +655,14 @@ class GradeCalculator:
             "is_fully_graded": is_fully_graded,
         }
 
-    def sync_subject_total(self, subject_id: int) -> float | None:
+    def sync_subject_total(self, subject_id: int, min_category_threshold: int | None = None) -> float | None:
         """Recalculates subject summary and persists total_mark and is_finalized."""
         subject = self.session.get(Subject, subject_id)
         if not subject:
             return None
 
         # Re-use existing comprehensive calculation logic
-        summary_result = self.calculate_subject_summary(subject)
+        summary_result = self.calculate_subject_summary(subject, min_category_threshold=min_category_threshold)
         all_assignments = list(getattr(subject, "assignments", []) or [])
         exam_record = self.session.execute(select(Examination).where(col(Examination.subject_id) == subject.id)).scalars().first()
         has_exam = getattr(subject, "has_exam", False)
