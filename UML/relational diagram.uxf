@@ -1,4 +1,16 @@
-<diagram program="umletino" version="15.1"><zoom_level>8</zoom_level><help_text>Space for diagram notes</help_text><element><id>UMLClass</id><coordinates><x>480</x><y>80</y><w>248</w><h>168</h></coordinates><panel_attributes>GradeScale
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="15.1">
+  <help_text>Space for diagram notes</help_text>
+  <zoom_level>9</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>639</x>
+      <y>27</y>
+      <w>333</w>
+      <h>189</h>
+    </coordinates>
+    <panel_attributes>GradeScale
 --
 id: int PK
 scale_name: string[Standard]                     CK1
@@ -9,32 +21,76 @@ gpa_point: float
 band_type: string[both]                         CK1
 
 UNIQUE(scale_name, grade, band_type)
-bg=#e6f3ff</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>488</x><y>632</y><w>248</w><h>104</h></coordinates><panel_attributes>University
+bg=#e6f3ff</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>648</x>
+      <y>648</y>
+      <w>279</w>
+      <h>117</h>
+    </coordinates>
+    <panel_attributes>University
 --
 id: int PK
 name: string                                                   CK1
 
 UNIQUE(name)
 ON DELETE SET NULL referenced by Course.university_id
-bg=#e6f3ff</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>128</x><y>88</y><w>296</w><h>128</h></coordinates><panel_attributes>Users
+bg=#e6f3ff</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>243</x>
+      <y>36</y>
+      <w>333</w>
+      <h>144</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;Supabase GoTrue&gt;&gt;
+auth.users
 --
-id: int PK
-username: string                                          CK1
-email: string                                                  CK2
-password_hash: string
+id: UUID PK
+email: string                                                  CK1
+created_at: timestamp
+raw_user_meta_data: jsonb
 
-UNIQUE(username)
 UNIQUE(email)
-bg=#e6f3ff</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>128</x><y>352</y><w>248</w><h>136</h></coordinates><panel_attributes>UserCourse
+bg=#e6f3ff</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>180</x>
+      <y>333</y>
+      <w>342</w>
+      <h>153</h>
+    </coordinates>
+    <panel_attributes>UserCourse
 --
 id: int PK
-user_id: int FK Ref Users(id) NOT NULL                 CK1
-course_id: int FK Ref Course(id) NOT NULL             CK1
+user_id: UUID FK Ref auth.users(id) NOT NULL   CK1
+course_id: int FK Ref Course(id) NOT NULL    CK1
 is_default: bool[false]
 
 UNIQUE(user_id, course_id)
 ON DELETE CASCADE via user_id, course_id
-bg=#e6f3ff</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>464</x><y>352</y><w>296</w><h>152</h></coordinates><panel_attributes>Course
+bg=#e6f3ff</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>621</x>
+      <y>333</y>
+      <w>333</w>
+      <h>171</h>
+    </coordinates>
+    <panel_attributes>Course
 --
 id: int PK
 name: string
@@ -43,7 +99,18 @@ grading_scale_id: int FK Ref GradeScale(id)
 university_id: int FK Ref University(id) NULL
 
 UNIQUE(code)
-bg=#e6f3ff</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>840</x><y>344</y><w>288</w><h>128</h></coordinates><panel_attributes>Semester
+bg=#e6f3ff</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1044</x>
+      <y>324</y>
+      <w>324</w>
+      <h>144</h>
+    </coordinates>
+    <panel_attributes>Semester
 --
 id: int PK
 name: string                                                   CK1
@@ -52,7 +119,18 @@ course_id: int FK Ref Course(id)                         CK1
 
 UNIQUE(course_id, name, year)
 ON DELETE CASCADE via course_id
-bg=#e6f3ff</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1232</x><y>792</y><w>352</w><h>184</h></coordinates><panel_attributes>Assignment
+bg=#e6f3ff</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1485</x>
+      <y>828</y>
+      <w>396</w>
+      <h>207</h>
+    </coordinates>
+    <panel_attributes>Assignment
 --
 id: int PK
 assessment: string                                             CK1
@@ -65,7 +143,18 @@ is_exam: bool[false]
 
 UNIQUE(assessment, subject_id)
 ON DELETE CASCADE via subject_id
-bg=#e6f3ff</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>792</x><y>552</y><w>360</w><h>176</h></coordinates><panel_attributes>Subject
+bg=#e6f3ff</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>990</x>
+      <y>558</y>
+      <w>405</w>
+      <h>198</h>
+    </coordinates>
+    <panel_attributes>Subject
 --
 id: int PK
 subject_code: string                                            CK1
@@ -78,7 +167,18 @@ has_exam: bool[true]
 
 UNIQUE(subject_code, semester_id)
 ON DELETE CASCADE via semester_id
-bg=#e6f3ff</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>1368</x><y>480</y><w>352</w><h>160</h></coordinates><panel_attributes>SubjectPrerequisite
+bg=#e6f3ff</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1638</x>
+      <y>477</y>
+      <w>396</w>
+      <h>180</h>
+    </coordinates>
+    <panel_attributes>SubjectPrerequisite
 --
 id: int PK
 subject_id: int FK Ref Subject(id)
@@ -88,7 +188,18 @@ is_corequisite: bool[false]
 
 UNIQUE(subject_id, prerequisite_subject_id)
 ON DELETE CASCADE via both subject FKs
-bg=#e6f3ff</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>632</x><y>856</y><w>288</w><h>120</h></coordinates><panel_attributes>ExamSettings
+bg=#e6f3ff</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>810</x>
+      <y>900</y>
+      <w>324</w>
+      <h>135</h>
+    </coordinates>
+    <panel_attributes>ExamSettings
 --
 id: int PK
 subject_id: int FK Ref Subject(id) NOT NULL            CK1
@@ -97,7 +208,18 @@ ps_factor: float[40.0]
 
 UNIQUE(subject_id)
 ON DELETE CASCADE via subject_id
-bg=#e6f3ff</panel_attributes><additional_attributes></additional_attributes></element><element><id>UMLClass</id><coordinates><x>968</x><y>856</y><w>240</w><h>128</h></coordinates><panel_attributes>Examination
+bg=#e6f3ff</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>1188</x>
+      <y>900</y>
+      <w>270</w>
+      <h>144</h>
+    </coordinates>
+    <panel_attributes>Examination
 --
 id: int PK
 subject_id: int FK Ref Subject(id) NOT NULL              CK1
@@ -107,36 +229,171 @@ exam_type: string[main]
 
 UNIQUE(subject_id)
 ON DELETE CASCADE via subject_id
-bg=#e6f3ff</panel_attributes><additional_attributes></additional_attributes></element><element><id>Relation</id><coordinates><x>584</x><y>496</y><w>40</w><h>152</h></coordinates><panel_attributes>lt=-
+bg=#e6f3ff</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>756</x>
+      <y>495</y>
+      <w>45</w>
+      <h>171</h>
+    </coordinates>
+    <panel_attributes>lt=-
 m1=1
-m2=0..*</panel_attributes><additional_attributes>10;170;10;10</additional_attributes></element><element><id>Relation</id><coordinates><x>600</x><y>240</y><w>40</w><h>120</h></coordinates><panel_attributes>lt=-
+m2=0..*</panel_attributes>
+    <additional_attributes>10.0;170.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>774</x>
+      <y>207</y>
+      <w>45</w>
+      <h>135</h>
+    </coordinates>
+    <panel_attributes>lt=-
 m1=0..*
-m2=1</panel_attributes><additional_attributes>10;10;10;130</additional_attributes></element><element><id>Relation</id><coordinates><x>368</x><y>408</y><w>112</w><h>32</h></coordinates><panel_attributes>lt=-
+m2=1</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;130.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>513</x>
+      <y>396</y>
+      <w>126</w>
+      <h>36</h>
+    </coordinates>
+    <panel_attributes>lt=-
 m1=0..*
-m2=1</panel_attributes><additional_attributes>120;10;10;10</additional_attributes></element><element><id>Relation</id><coordinates><x>256</x><y>208</y><w>40</w><h>160</h></coordinates><panel_attributes>lt=-
+m2=1</panel_attributes>
+    <additional_attributes>120.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>387</x>
+      <y>171</y>
+      <w>45</w>
+      <h>180</h>
+    </coordinates>
+    <panel_attributes>lt=-
 m1=0..*
-m2=1</panel_attributes><additional_attributes>10;180;10;10</additional_attributes></element><element><id>Relation</id><coordinates><x>752</x><y>408</y><w>104</w><h>32</h></coordinates><panel_attributes>lt=-
+m2=1</panel_attributes>
+    <additional_attributes>10.0;180.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>945</x>
+      <y>396</y>
+      <w>117</w>
+      <h>36</h>
+    </coordinates>
+    <panel_attributes>lt=-
 m1=1..*
-m2=1</panel_attributes><additional_attributes>110;10;10;10</additional_attributes></element><element><id>Relation</id><coordinates><x>960</x><y>464</y><w>40</w><h>104</h></coordinates><panel_attributes>lt=-
+m2=1</panel_attributes>
+    <additional_attributes>110.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1179</x>
+      <y>459</y>
+      <w>45</w>
+      <h>117</h>
+    </coordinates>
+    <panel_attributes>lt=-
 m1=1..*
-m2=1</panel_attributes><additional_attributes>10;110;10;10</additional_attributes></element><element><id>Relation</id><coordinates><x>1144</x><y>632</y><w>168</w><h>176</h></coordinates><panel_attributes>lt=-
+m2=1</panel_attributes>
+    <additional_attributes>10.0;110.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1386</x>
+      <y>648</y>
+      <w>189</w>
+      <h>198</h>
+    </coordinates>
+    <panel_attributes>lt=-
 m1=1..*
 m2=1
-subject_id</panel_attributes><additional_attributes>170;200;170;80;60;80;60;10;10;10</additional_attributes></element><element><id>Relation</id><coordinates><x>792</x><y>720</y><w>112</w><h>152</h></coordinates><panel_attributes>lt=-
+subject_id</panel_attributes>
+    <additional_attributes>170.0;200.0;170.0;80.0;60.0;80.0;60.0;10.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>990</x>
+      <y>747</y>
+      <w>135</w>
+      <h>171</h>
+    </coordinates>
+    <panel_attributes>lt=-
 m1=1
 m2=0..1
-subject_id</panel_attributes><additional_attributes>10;10;10;80;100;80;100;170</additional_attributes></element><element><id>Relation</id><coordinates><x>1144</x><y>576</y><w>240</w><h>40</h></coordinates><panel_attributes>subject_id
+subject_id</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;80.0;100.0;80.0;100.0;170.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1386</x>
+      <y>585</y>
+      <w>270</w>
+      <h>45</h>
+    </coordinates>
+    <panel_attributes>subject_id
 lt=-
 m1=0..*
-m2=1</panel_attributes><additional_attributes>280;20;10;20</additional_attributes></element><element><id>Relation</id><coordinates><x>960</x><y>720</y><w>112</w><h>152</h></coordinates><panel_attributes>subject_id
+m2=1</panel_attributes>
+    <additional_attributes>280.0;20.0;10.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1179</x>
+      <y>747</y>
+      <w>126</w>
+      <h>171</h>
+    </coordinates>
+    <panel_attributes>subject_id
 lt=-
 m1=0..*
-m2=1</panel_attributes><additional_attributes>100;170;100;100;10;100;10;10</additional_attributes></element><element><id>Relation</id><coordinates><x>1144</x><y>608</y><w>240</w><h>40</h></coordinates><panel_attributes>lt=-
+m2=1</panel_attributes>
+    <additional_attributes>100.0;170.0;100.0;100.0;10.0;100.0;10.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>1386</x>
+      <y>621</y>
+      <w>270</w>
+      <h>45</h>
+    </coordinates>
+    <panel_attributes>lt=-
 prerequesite_subject_id
 m1=1
-m2=0..*</panel_attributes><additional_attributes>10;20;280;20</additional_attributes></element><element><id>UMLNote</id><coordinates><x>1336</x><y>96</y><w>288</w><h>56</h></coordinates><panel_attributes>Legend...
+m2=0..*</panel_attributes>
+    <additional_attributes>10.0;20.0;280.0;20.0</additional_attributes>
+  </element>
+  <element>
+    <id>UMLNote</id>
+    <coordinates>
+      <x>1602</x>
+      <y>45</y>
+      <w>324</w>
+      <h>63</h>
+    </coordinates>
+    <panel_attributes>Legend...
 bg=white
 fg=#00000
 CK = candidate key  / part of unique constraint
 PK = primary key
-FK = foreign key</panel_attributes><additional_attributes></additional_attributes></element></diagram>
+FK = foreign key</panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>
