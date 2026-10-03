@@ -5,6 +5,7 @@
     "prepare": "husky install"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.49.0",
     "@tailwindcss/cli": "^4.1.13",
     "tailwindcss": "^4.1.13",
     "daisyui": "^4.12.10"

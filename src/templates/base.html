@@ -5,6 +5,7 @@
     <title>{% block title %}University Marks Manager{% endblock %}</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" />
     <!-- <script src="https://cdn.tailwindcss.com"></script> -->
     <link rel="stylesheet" href="/static/css/tailwind.css?v={{ current_year or 'v1' }}" />
@@ -69,7 +70,7 @@
                 </svg>
                 <span>Edit Profile</span>
               </a></li>
-              <li><a href="/logout" class="flex items-center gap-2">
+              <li><a href="/logout" onclick="handleSupabaseLogout(event)" class="flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
@@ -117,6 +118,29 @@
       });
     </script>
     <script>
+      // Configure HTMX requests to include Supabase Bearer token if present in cookies
+      document.body.addEventListener('htmx:configRequest', function (evt) {
+        var match = document.cookie.match(new RegExp('(^| )sb_access_token=([^;]+)'));
+        if (match && match[2]) {
+          evt.detail.headers['Authorization'] = 'Bearer ' + decodeURIComponent(match[2]);
+        }
+      });
+
+      // Handle sign-out via Supabase client and redirect
+      async function handleSupabaseLogout(e) {
+        if (e) e.preventDefault();
+        try {
+          var url = "{{ supabase_url }}";
+          var key = "{{ supabase_anon_key }}";
+          if (url && key && window.supabase) {
+            var client = supabase.createClient(url, key);
+            await client.auth.signOut();
+          }
+        } catch (err) {}
+        document.cookie = "sb_access_token=; path=/; max-age=0";
+        window.location.href = "/logout";
+      }
+
       // Listen for server-triggered HX-Trigger events indicating the course list changed.
       // When received, request an updated header fragment and replace the header.
       document.body.addEventListener('courseListChanged', function () {
