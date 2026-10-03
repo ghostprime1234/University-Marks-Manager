@@ -28,12 +28,22 @@ from .course_views import router as course_router
 from .settings_views import router as settings_router
 from .auth_views import router as auth_router
 from .types import IndexContext
+from src.core.auth import ensure_uuid, get_current_user_token
 from src.core.services.semester_manager import SemesterManager
 from src.core.services.course_manager import CourseManager
 from src.core.services.grade_calculator import GradeCalculator, process_assessments, _round2dp
 
 async def verify_user(request: Request):
-    if not request.session.get("user_id"):
+    user_id = None
+    try:
+        user_data = await get_current_user_token(request)
+        user_id = ensure_uuid(user_data["sub"])
+        request.state.user = user_data
+        request.state.user_id = user_id
+    except HTTPException:
+        pass
+
+    if not user_id:
         # For normal browser requests, redirect to login
         hdr = request.headers.get
         is_htmx = hdr("hx-request") == "true"
@@ -65,7 +75,7 @@ def _render_home_body(request: Request, session: Session, parsed_year: Optional[
     user_id_val = request.session.get("user_id")
     if not user_id_val:
         raise HTTPException(status_code=307, detail="Not Logged In", headers={"location": "/login"})
-    user_id = int(user_id_val)
+    user_id = ensure_uuid(user_id_val)
     
     # Get only courses for this user
     user_courses = session.exec(
@@ -237,7 +247,7 @@ def home(request: Request, year: Optional[str] = None, session: Session = Depend
     user_id_val = request.session.get("user_id")
     if not user_id_val:
         return RedirectResponse(url="/login", status_code=303)
-    user_id = int(user_id_val)
+    user_id = ensure_uuid(user_id_val)
     # Determine if a course is selected
     sess = request.session
     active_course_id = sess.get("current_course_id")

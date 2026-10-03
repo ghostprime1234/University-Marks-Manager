@@ -14,6 +14,7 @@ from .exams import router as exams_router
 from .courses import courses_router
 from .export import router as export_router
 from .import_data import router as import_router
+from .user_courses import router as user_courses_router
 
 api_router = APIRouter()
 # Namespace each resource router to avoid path shadowing like /api/{id} catching /api/_health
@@ -23,6 +24,7 @@ api_router.include_router(assignments_router, prefix="/assignments", tags=["Assi
 api_router.include_router(exams_router, prefix="/exams", tags=["Exams"])
 api_router.include_router(export_router, prefix="/export", tags=["Export"])
 api_router.include_router(import_router, prefix="/import", tags=["Import"])
+api_router.include_router(user_courses_router)
 api_router.include_router(courses_router)  # already has /courses prefix
 
 

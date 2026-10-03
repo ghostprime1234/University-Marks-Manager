@@ -1,11 +1,12 @@
 """Pytest fixtures and configuration."""
+import uuid
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.pool import StaticPool
 from sqlmodel import SQLModel, Session, create_engine
 
 from src.app.main import app
-from src.infrastructure.db.models import Course, GradeScale, Semester, Subject, User
+from src.infrastructure.db.models import Course, GradeScale, Semester, Subject, User, UserCourse
 from src.presentation.api.deps import get_session
 
 
@@ -44,12 +45,12 @@ def client_fixture(db_engine):
 
 @pytest.fixture(name="sample_data")
 def sample_data_fixture(session):
-    """Seed baseline User, GradeScale, Course, Semester, and Subject."""
+    """Seed baseline User, GradeScale, Course, Semester, Subject, and UserCourse."""
+    test_user_id = uuid.UUID("11111111-1111-1111-1111-111111111111")
     user = User(
-        id=1,
+        id=test_user_id,
         username="testuser",
         email="test@example.com",
-        password_hash="hashed_pw",
     )
     session.add(user)
 
@@ -73,6 +74,14 @@ def sample_data_fixture(session):
         grading_scale_id=scale.id,
     )
     session.add(course)
+    session.commit()
+
+    user_course = UserCourse(
+        user_id=test_user_id,
+        course_id=course.id,
+        is_default=True,
+    )
+    session.add(user_course)
     session.commit()
 
     semester = Semester(
@@ -101,4 +110,5 @@ def sample_data_fixture(session):
         "course": course,
         "semester": semester,
         "subject": subject,
+        "user_course": user_course,
     }

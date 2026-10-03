@@ -4,7 +4,20 @@
 {% block content %}
 <div class="flex items-center justify-center py-12">
   <div class="w-full max-w-md bg-base-100 rounded-xl shadow-md p-8 flex flex-col gap-4">
-    <h2 class="text-2xl font-bold text-center">Create Account</h2>
+    <div class="text-center">
+      <h2 class="text-2xl font-bold">Create Account</h2>
+      <p class="text-xs opacity-60 mt-1">Powered by Supabase Auth</p>
+    </div>
+
+    <div id="auth-alert" class="alert alert-error hidden">
+      <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+      <span id="auth-error-msg"></span>
+    </div>
+
+    <div id="auth-success" class="alert alert-success hidden">
+      <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+      <span id="auth-success-msg"></span>
+    </div>
 
     {% if error %}
     <div class="alert alert-error">
@@ -12,46 +25,180 @@
     </div>
     {% endif %}
 
-    <form method="post" action="/signup" class="flex flex-col gap-4">
+    <form id="supabase-signup-form" class="flex flex-col gap-4">
       <div class="form-control">
-        <label class="label" for="username">
-          <span class="label-text">Username (3+ characters)</span>
+        <label class="label" for="signup-username">
+          <span class="label-text">Username</span>
         </label>
-        <input type="text" id="username" name="username" required minlength="3"
+        <input type="text" id="signup-username" name="username" required minlength="3" autocomplete="username"
+          placeholder="e.g. alex24"
           class="input input-bordered w-full" />
       </div>
 
       <div class="form-control">
-        <label class="label" for="email">
+        <label class="label" for="signup-email">
           <span class="label-text">Email Address</span>
         </label>
-        <input type="email" id="email" name="email" required
+        <input type="email" id="signup-email" name="email" required autocomplete="email"
+          placeholder="alex@university.edu"
           class="input input-bordered w-full" />
       </div>
 
       <div class="form-control">
-        <label class="label" for="password">
+        <label class="label" for="signup-password">
           <span class="label-text">Password (8+ characters)</span>
         </label>
-        <input type="password" id="password" name="password" required minlength="8"
+        <input type="password" id="signup-password" name="password" required minlength="8" autocomplete="new-password"
+          placeholder="••••••••"
           class="input input-bordered w-full" />
       </div>
 
       <div class="form-control">
-        <label class="label" for="password_confirm">
+        <label class="label" for="signup-password-confirm">
           <span class="label-text">Confirm Password</span>
         </label>
-        <input type="password" id="password_confirm" name="password_confirm" required minlength="8"
+        <input type="password" id="signup-password-confirm" name="password_confirm" required minlength="8" autocomplete="new-password"
+          placeholder="••••••••"
           class="input input-bordered w-full" />
       </div>
 
-      <button type="submit" class="btn btn-primary w-full">Create Account</button>
+      <button type="submit" id="signup-submit-btn" class="btn btn-primary w-full mt-2">
+        <span id="signup-btn-text">Create Account</span>
+        <span id="signup-btn-spinner" class="loading loading-spinner loading-sm hidden"></span>
+      </button>
     </form>
+
+    <div class="divider text-xs opacity-50">OR</div>
 
     <p class="text-center text-sm">
       Already have an account?
-      <a href="/login" class="link link-primary">Login here</a>
+      <a href="/login" class="link link-primary font-semibold">Sign in here</a>
     </p>
   </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  (function() {
+    const supabaseUrl = "{{ supabase_url }}";
+    const supabaseAnonKey = "{{ supabase_anon_key }}";
+    const form = document.getElementById("supabase-signup-form");
+    const errorAlert = document.getElementById("auth-alert");
+    const errorMsg = document.getElementById("auth-error-msg");
+    const successAlert = document.getElementById("auth-success");
+    const successMsg = document.getElementById("auth-success-msg");
+    const submitBtn = document.getElementById("signup-submit-btn");
+    const btnText = document.getElementById("signup-btn-text");
+    const btnSpinner = document.getElementById("signup-btn-spinner");
+
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      errorAlert.classList.remove("hidden");
+      successAlert.classList.add("hidden");
+    }
+
+    function showSuccess(msg) {
+      successMsg.textContent = msg;
+      successAlert.classList.remove("hidden");
+      errorAlert.classList.add("hidden");
+    }
+
+    function setLoading(isLoading) {
+      submitBtn.disabled = isLoading;
+      if (isLoading) {
+        btnText.classList.add("hidden");
+        btnSpinner.classList.remove("hidden");
+      } else {
+        btnText.classList.remove("hidden");
+        btnSpinner.classList.add("hidden");
+      }
+    }
+
+    const client = (supabaseUrl && supabaseAnonKey) 
+      ? supabase.createClient(supabaseUrl, supabaseAnonKey) 
+      : null;
+
+    form.addEventListener("submit", async function(e) {
+      e.preventDefault();
+      errorAlert.classList.add("hidden");
+      successAlert.classList.add("hidden");
+
+      const username = document.getElementById("signup-username").value.trim();
+      const email = document.getElementById("signup-email").value.trim();
+      const password = document.getElementById("signup-password").value;
+      const confirmPassword = document.getElementById("signup-password-confirm").value;
+
+      if (!username || username.length < 3) {
+        showError("Username must be at least 3 characters.");
+        return;
+      }
+      if (!password || password.length < 8) {
+        showError("Password must be at least 8 characters.");
+        return;
+      }
+      if (password !== confirmPassword) {
+        showError("Passwords do not match.");
+        return;
+      }
+
+      if (!client) {
+        showError("Supabase environment configuration (SUPABASE_URL and SUPABASE_ANON_KEY) is missing.");
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const { data, error } = await client.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { username: username }
+          }
+        });
+
+        if (error) {
+          showError(error.message);
+          setLoading(false);
+          return;
+        }
+
+        if (data && data.session) {
+          // Immediately active session
+          const accessToken = data.session.access_token;
+          const refreshToken = data.session.refresh_token;
+
+          document.cookie = "sb_access_token=" + encodeURIComponent(accessToken) + "; path=/; max-age=604800; SameSite=Lax";
+
+          const resp = await fetch("/auth/session", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer " + accessToken
+            },
+            body: JSON.stringify({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            })
+          });
+
+          if (!resp.ok) {
+            const errBody = await resp.json().catch(() => ({}));
+            showError(errBody.detail || "Failed to initialize server session");
+            setLoading(false);
+            return;
+          }
+
+          window.location.href = "/?selected=1";
+        } else {
+          // Email confirmation is enabled in Supabase project
+          showSuccess("Account created successfully! Please check your email to confirm your account before logging in.");
+          setLoading(false);
+        }
+      } catch (err) {
+        showError(err.message || "An unexpected error occurred during account creation.");
+        setLoading(false);
+      }
+    });
+  })();
+</script>
 {% endblock %}

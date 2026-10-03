@@ -1,8 +1,12 @@
 import json
+import uuid
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlmodel import Session
 
+from src.core.auth import ensure_uuid, get_optional_user_id
+from src.core.services.grade_calculator import GradeCalculator
 from src.infrastructure.db.models import (
     Assignment,
     Examination,
@@ -10,26 +14,37 @@ from src.infrastructure.db.models import (
     Semester,
     Subject,
     SubjectPrerequisite,
-    User,
 )
 from src.presentation.api.deps import get_session
-from src.core.services.grade_calculator import GradeCalculator
 
 router = APIRouter()
 
+
+@router.post("", response_model=Dict[str, Any])
 @router.post("/{user_id}", response_model=Dict[str, Any])
 async def import_user_data(
-    user_id: int,
+    user_id: Optional[str] = None,
     file: UploadFile = File(...),
+    current_user_id: Optional[uuid.UUID] = Depends(get_optional_user_id),
     session: Session = Depends(get_session),
 ) -> Dict[str, Any]:
     try:
-        # 1. Verify target user exists
-        user = session.get(User, user_id)
-        if not user:
+        target_uuid = None
+        if user_id:
+            try:
+                target_uuid = ensure_uuid(user_id)
+            except Exception:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid user UUID: {user_id}",
+                )
+        elif current_user_id:
+            target_uuid = current_user_id
+
+        if not target_uuid:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User with ID {user_id} not found.",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication required to import data",
             )
 
         content = await file.read()
@@ -40,15 +55,15 @@ async def import_user_data(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid JSON file.",
             )
-        
+
         # Robust helper to filter columns based on SQLModel
         def get_json_records(sheet_name: str, model_class: Any) -> List[Dict[str, Any]]:
             records = json_data.get(sheet_name, [])
             if not isinstance(records, list):
                 return []
-            
-            valid_fields = model_class.__fields__.keys()
-            
+
+            valid_fields = getattr(model_class, "model_fields", getattr(model_class, "__fields__", {})).keys()
+
             result: List[Dict[str, Any]] = []
             for record in records:
                 if not isinstance(record, dict):
@@ -58,7 +73,7 @@ async def import_user_data(
                     key_str = str(k)
                     if key_str not in valid_fields:
                         continue
-                        
+
                     if v is None:
                         clean_record[key_str] = None
                     else:
@@ -72,7 +87,7 @@ async def import_user_data(
             "assignments": get_json_records("assignments", Assignment),
             "examinations": get_json_records("examinations", Examination),
             "exam_settings": get_json_records("exam_settings", ExamSettings),
-            "subject_prerequisites": get_json_records("subject_prerequisites", SubjectPrerequisite)
+            "subject_prerequisites": get_json_records("subject_prerequisites", SubjectPrerequisite),
         }
 
         imported_counts = {k: 0 for k in payload.keys()}
@@ -137,7 +152,7 @@ async def import_user_data(
 
         return {
             "success": True,
-            "message": f"Successfully imported data for user {user_id}",
+            "message": f"Successfully imported data for user {target_uuid}",
             "imported": imported_counts,
         }
 

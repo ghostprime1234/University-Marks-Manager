@@ -4,6 +4,7 @@ Run with:
     uvicorn src.app.main:app --reload
 """
 from __future__ import annotations
+from src.presentation.api.routers.auth_proxy import router as auth_proxy_router
 
 from pathlib import Path
 from datetime import datetime
@@ -25,6 +26,7 @@ from src.infrastructure.db import models  # noqa: F401
 from src.infrastructure.db.engine import engine, wait_for_database
 from src.presentation.api.routers import api_router as api
 from src.presentation.web.views import views
+from src.core.auth import extract_token_from_request, verify_supabase_token, ensure_uuid
 
 
 class HealthCheckFilter(logging.Filter):
@@ -120,7 +122,9 @@ async def lifespan(fastapi_app: FastAPI):
         app_version=app_version,
         env_name=os.getenv("ENV", "dev"),
         api_version=api_version,
-        app_name=app_name
+        app_name=app_name,
+        supabase_url=os.getenv("SUPABASE_URL", ""),
+        supabase_anon_key=os.getenv("SUPABASE_ANON_KEY", ""),
     )
     # ...existing code...
     yield
@@ -135,6 +139,21 @@ APPLICATION.include_router(api, prefix=API_PREFIX)
 if raw_api_version and raw_api_version != api_version:
     APPLICATION.include_router(api, prefix=f"/api/{raw_api_version}")
 APPLICATION.include_router(views)
+APPLICATION.include_router(auth_proxy_router)
+
+
+# Supabase Auth Middleware to validate Bearer tokens and set request.state.user
+@APPLICATION.middleware("http")
+async def supabase_auth_middleware(request: Request, call_next):
+    token = extract_token_from_request(request)
+    if token:
+        try:
+            payload = verify_supabase_token(token)
+            request.state.user = payload
+            request.state.user_id = ensure_uuid(payload["sub"])
+        except Exception:
+            pass
+    return await call_next(request)
 
 # Enable server-side sessions for lightweight state (e.g., selected course)
 # NOTE: Replace the secret key with an environment variable for production use.

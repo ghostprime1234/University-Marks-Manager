@@ -7,7 +7,7 @@ services:
     command: >
       uvicorn src.app.main:app
       --host 0.0.0.0
-      --port 8001
+      --port ${WEB_PORT:-8001}
       --proxy-headers
       --forwarded-allow-ips="*"
       --reload
@@ -17,34 +17,46 @@ services:
       --access-log
     restart: unless-stopped
     ports:
-      - "8001:8001"
+      - "${WEB_PORT:-8001}:8001"
     networks:
-      - proxy-tier
-      - databases_bigdata-net
+      - infra_bigdata-net
     env_file:
       - .env
     environment:
       - PYTHONUNBUFFERED=1
       - LOG_FILTER_HEALTHCHECK=true
-      - SECRET_PEPPER=${SECRET_PEPPER}
-      - SESSION_SECRET_KEY=${SESSION_SECRET_KEY}
       - FORWARDED_ALLOW_IPS=*
-      - DB_USER=Michael
-      - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres}
-      - DB_HOST=host.containers.internal
-      - DB_PORT=5432
-      - DB_NAME=marks-manager-db
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${POSTGRES_DB}
     volumes:
       - ./:/app:Z
-    healthcheck:
-      test: [ "CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8001/healthz').getcode()==200 else 1)\"" ]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 40s
+
+  auth:
+    image: supabase/gotrue:v2.158.0
+    container_name: supabase_auth
+    restart: unless-stopped
+    ports:
+      - "${AUTH_PORT:-9999}:9999"
+    networks:
+      - infra_bigdata-net
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: https://auth.michaelslabs.com
+      GOTRUE_SITE_URL: https://marks.michaelslabs.com
+      GOTRUE_URI_ALLOW_LIST: https://marks.michaelslabs.com,https://marks.michaelslabs.com/*
+      GOTRUE_CORS_ALLOWED_ORIGINS: "*"
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://${POSTGRES_USER}:${GOTRUE_DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${POSTGRES_DB}?sslmode=disable
+      GOTRUE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
 
 networks:
-  proxy-tier:
-    external: true
-  databases_bigdata-net:
+  infra_bigdata-net:
     external: true

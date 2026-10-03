@@ -1,5 +1,6 @@
 """SQLModel ORM models (infrastructure layer)."""
 
+import uuid
 from enum import Enum
 from typing import Any, ClassVar, Optional
 
@@ -20,27 +21,28 @@ class GradeType(str, Enum):
 class User(SQLModel, table=True):
     """Represents a user of the Marks Manager system."""
     __tablename__: ClassVar[Any] = "users"
-    id: Optional[int] = Field(default=None, primary_key=True)
-    username: str = Field(index=True, unique=True)
-    email: str = Field(index=True, unique=True)
-    password_hash: str 
-    
-    user_courses: list["UserCourse"] = Relationship(back_populates="user")
+    id: Optional[uuid.UUID] = Field(default=None, primary_key=True)
+    username: Optional[str] = Field(default=None, index=True, unique=True)
+    email: Optional[str] = Field(default=None, index=True, unique=True)
 
 class UserCourse(SQLModel, table=True):
     """Association table linking users to their courses."""
     __tablename__: ClassVar[Any] = "user_courses"
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="users.id", ondelete="CASCADE")
+    user_id: uuid.UUID = Field(index=True)
     course_id: int = Field(foreign_key="courses.id", ondelete="CASCADE")
     is_default: bool = Field(default=False)
     
-    user: "User" = Relationship(back_populates="user_courses")
     course: "Course" = Relationship(back_populates="user_links")
     
     __table_args__ = (
         UniqueConstraint("user_id", "course_id", name="uq_user_course"),
     )
+
+    def __init__(self, **data: Any):
+        if "user_id" in data and isinstance(data["user_id"], str):
+            data["user_id"] = uuid.UUID(data["user_id"].strip())
+        super().__init__(**data)
 
 class University(SQLModel, table=True):
     """Represents a university."""
