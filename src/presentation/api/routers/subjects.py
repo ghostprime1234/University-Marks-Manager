@@ -7,7 +7,9 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlmodel import Session, select
     # No need for and_ import unless using multiple join conditions
 
-from src.infrastructure.db.models import Subject, Semester
+import uuid
+from src.core.auth import get_optional_user_id
+from src.infrastructure.db.models import Subject, Semester, UserCourse
 from src.presentation.api.schemas import SubjectCreate, SubjectRead
 from src.presentation.api.deps import get_session
 
@@ -19,29 +21,41 @@ router = APIRouter()
 @router.get("/", response_model=List[SubjectRead])
 def list_subjects(
     session: Session = Depends(get_session),
+    current_user_id: Optional[uuid.UUID] = Depends(get_optional_user_id),
+    user_id: Optional[uuid.UUID] = None,
+    user_only: bool = False,
     semester_id: Optional[int] = None,
     semester_name: Optional[str] = None,
     year: Optional[int] = None,
     code: Optional[str] = None,
 ) -> Sequence[Subject]:
     """
-    List all subjects, optionally filtered by semester name, year, and subject code.
-    Args:
-        session (Session): Database session dependency.
-        semester_name (Optional[str]): Semester name to filter subjects by.
-        year (Optional[int]): Year to filter subjects by.
-        code (Optional[str]): Subject code to filter subjects by.
-    
-    Returns:
-        Sequence[Subject]: List of subjects.
+    List all subjects, optionally filtered by authenticated user's enrolled courses,
+    semester name, year, and subject code.
     """
     stmt = select(Subject)
+    joined_semester = False
+
+    effective_user_id = user_id or (current_user_id if user_only else None)
+    if effective_user_id is not None:
+        user_courses = session.exec(
+            select(UserCourse).where(UserCourse.user_id == effective_user_id)
+        ).all()
+        user_course_ids = [uc.course_id for uc in user_courses]
+        if not user_course_ids:
+            return []
+        stmt = stmt.join(Semester, Subject.semester_id == Semester.id).where(
+            Semester.course_id.in_(user_course_ids)
+        )
+        joined_semester = True
+
     # Prefer normalized filter by semester_id
     if semester_id is not None:
         stmt = stmt.where(Subject.semester_id == semester_id)
     elif semester_name or year:
-        # Join on semester_id to Semester.id, then filter by Semester.name/year
-        stmt = stmt.join(Semester, expression.true() & (Subject.semester_id == Semester.id))
+        if not joined_semester:
+            stmt = stmt.join(Semester, expression.true() & (Subject.semester_id == Semester.id))
+            joined_semester = True
         if semester_name:
             stmt = stmt.where(Semester.name == semester_name)
         if year:
