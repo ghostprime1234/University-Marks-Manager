@@ -53,6 +53,17 @@ def signup_page(request: Request):
     })
 
 
+@router.api_route("/reset-password", methods=["GET", "HEAD"], response_class=HTMLResponse)
+def reset_password_page(request: Request):
+    """Render the password recovery page powered by Supabase client SDK."""
+    error = request.query_params.get("error")
+    return _render(request, "reset_password.html", {
+        "error": error,
+        "supabase_url": os.getenv("SUPABASE_URL", ""),
+        "supabase_anon_key": os.getenv("SUPABASE_ANON_KEY", ""),
+    })
+
+
 @router.post("/auth/session")
 def sync_supabase_session(
     request: Request,

@@ -26,3 +26,7 @@ async def proxy_gotrue(request: Request, path: str):
         excluded_headers = {"content-encoding", "content-length", "transfer-encoding", "connection"}
         response_headers = {k: v for k, v in response.headers.items() if k.lower() not in excluded_headers}
         return Response(content=response.content, status_code=response.status_code, headers=response_headers)
+
+@router.api_route("/verify", methods=["GET", "POST"])
+async def proxy_verify_direct(request: Request):
+    return await proxy_gotrue(request, path="verify")

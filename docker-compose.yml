@@ -19,7 +19,7 @@ services:
     ports:
       - "${WEB_PORT:-8001}:8001"
     networks:
-      - infra_bigdata-net
+      - databases_bigdata-net
     env_file:
       - .env
     environment:
@@ -41,11 +41,11 @@ services:
     ports:
       - "${AUTH_PORT:-9999}:9999"
     networks:
-      - infra_bigdata-net
+      - databases_bigdata-net
     environment:
       GOTRUE_API_HOST: 0.0.0.0
       GOTRUE_API_PORT: 9999
-      API_EXTERNAL_URL: https://auth.michaelslabs.com
+      API_EXTERNAL_URL: https://marks.michaelslabs.com/auth/v1
       GOTRUE_SITE_URL: https://marks.michaelslabs.com
       GOTRUE_URI_ALLOW_LIST: https://marks.michaelslabs.com,https://marks.michaelslabs.com/*
       GOTRUE_CORS_ALLOWED_ORIGINS: "*"
@@ -53,10 +53,17 @@ services:
       GOTRUE_DB_DATABASE_URL: postgres://${POSTGRES_USER}:${GOTRUE_DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${POSTGRES_DB}?sslmode=disable
       GOTRUE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
       GOTRUE_JWT_EXP: 3600
-      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
       GOTRUE_DISABLE_SIGNUP: "false"
       GOTRUE_MAILER_AUTOCONFIRM: "true"
 
+      # SMTP Mailer Settings
+      GOTRUE_SMTP_HOST: ${SMTP_HOST}
+      GOTRUE_SMTP_PORT: ${SMTP_PORT}
+      GOTRUE_SMTP_USER: ${SMTP_USER}
+      GOTRUE_SMTP_PASS: ${SMTP_PASS}
+      GOTRUE_SMTP_ADMIN_EMAIL: ${SMTP_ADMIN_EMAIL}
+      GOTRUE_SMTP_SENDER_NAME: ${SMTP_SENDER_NAME}
+
 networks:
-  infra_bigdata-net:
+  databases_bigdata-net:
     external: true

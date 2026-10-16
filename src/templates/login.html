@@ -176,7 +176,9 @@
         return;
       }
       try {
-        const { error } = await client.auth.resetPasswordForEmail(email);
+        const { error } = await client.auth.resetPasswordForEmail(email, {
+          redirectTo: "https://marks.michaelslabs.com/reset-password"
+        });
         if (error) {
           showError(error.message);
         } else {
