@@ -3,9 +3,9 @@
 {% block title %}{{ course.name }}{% if course.code %} ({{ course.code }}){% endif %} | University Marks Manager{% endblock %}
 
 {% block content %}
-<div class="flex flex-col gap-6">
+<div class="flex flex-col gap-6 pb-16">
   <!-- Page heading -->
-  <div class="flex items-center justify-between gap-4">
+  <div class="flex flex-wrap items-center justify-between gap-2">
     <div>
       <h1 class="site-title">{{ course.name }}</h1>
       {% if course.code %}
@@ -73,7 +73,7 @@
   {% endif %}
 
   <!-- Header -->
-  <section class="p-6 rounded-xl bg-base-100 shadow card-glow">
+  <section class="p-4 sm:p-6 rounded-xl bg-base-100 shadow card-glow">
     <div class="flex flex-col md:flex-row justify-between items-start gap-4">
       <div class="flex-grow">
         {% if course.semesters and course.semesters|length > 0 %}
@@ -87,52 +87,66 @@
           <p class="text-sm opacity-70 italic">No semesters associated yet</p>
         {% endif %}
       </div>
-      <div class="flex items-center gap-2">
-        <form method="post" action="/courses/{{ course.code or course.id }}/select" hx-post="/courses/{{ course.code or course.id }}/select" hx-target="#course-select-alert" hx-swap="innerHTML">
+      <div class="flex flex-wrap items-center gap-2 self-end md:self-auto">
+        <form method="post" action="/courses/{{ course.code }}/select" hx-post="/courses/{{ course.code }}/select" hx-target="#course-select-alert" hx-swap="innerHTML">
           <button type="submit" class="btn btn-sm btn-primary">Use this Course</button>
         </form>
-        <details class="dropdown dropdown-bottom relative">
-          <summary class="btn btn-sm btn-ghost">⋮</summary>
-          <div class="dropdown-content z-[100] menu p-6 shadow-2xl bg-white !bg-opacity-100 border border-base-300 rounded-box w-[28rem] max-w-[95vw] absolute left-0 mt-2">
-            <form method="post" action="/courses/{{ course.code or course.id }}/update" class="flex flex-col gap-4">
-              <h3 class="font-bold text-lg border-b pb-2 mb-2">Edit Course Details</h3>
+        <details class="dropdown dropdown-bottom dropdown-end relative">
+          <summary class="btn btn-sm btn-outline gap-1.5 px-2.5" title="Edit Course Details" aria-label="Edit Course Details">
+            <span class="text-xs font-semibold">Edit Course Details</span>
+            <span class="font-bold text-base leading-none">⋮</span>
+          </summary>
+          <div class="dropdown-content z-[100] menu p-4 sm:p-6 shadow-2xl bg-white !bg-opacity-100 border border-base-300 rounded-box w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] sm:w-96 max-h-[75vh] overflow-y-auto absolute right-0 mt-2 mb-16">
+            <form method="post" action="/courses/{{ course.code }}/update" class="flex flex-col gap-3">
+              <h3 class="font-bold text-lg border-b pb-2 mb-1">Edit Course Details</h3>
               
-              <label class="form-control">
-                <span class="label-text text-xs font-semibold uppercase opacity-60">Course Name</span>
-                <input name="name" class="input input-bordered input-sm mt-1" value="{{ course.name }}" required />
-              </label>
+              <div class="form-control w-full relative">
+                <label class="label py-1">
+                  <span class="label-text text-xs font-semibold uppercase opacity-60">Course Name</span>
+                </label>
+                <input name="name" class="input input-bordered input-sm w-full" value="{{ course.name }}" required />
+              </div>
 
-              <label class="form-control">
-                <span class="label-text text-xs font-semibold uppercase opacity-60">Course Code</span>
-                <input name="code" class="input input-bordered input-sm mt-1" value="{{ course.code }}" required />
-              </label>
+              <div class="form-control w-full relative">
+                <label class="label py-1">
+                  <span class="label-text text-xs font-semibold uppercase opacity-60">Course Code</span>
+                </label>
+                <input name="code" class="input input-bordered input-sm w-full" value="{{ course.code }}" required />
+              </div>
 
-              <label class="form-control">
-                <span class="label-text text-xs font-semibold uppercase opacity-60">University</span>
-                <select name="university_id" class="select select-bordered select-sm mt-1" required onchange="this.nextElementSibling.style.display = this.value === 'add_new' ? 'block' : 'none'">
+              <div class="form-control w-full relative">
+                <label class="label py-1">
+                  <span class="label-text text-xs font-semibold uppercase opacity-60">University</span>
+                </label>
+                <select name="university_id" class="select select-bordered select-sm w-full" required onchange="this.nextElementSibling.style.display = this.value === 'add_new' ? 'block' : 'none'">
                   <option value="" disabled {% if not course.university_id %}selected{% endif %}>Select university</option>
                   {% for uni in universities %}
                     <option value="{{ uni.id }}" {% if course.university_id == uni.id %}selected{% endif %}>{{ uni.name }}</option>
                   {% endfor %}
                   <option value="add_new">Add new university...</option>
                 </select>
-                <input name="new_university_name" class="input input-bordered input-sm mt-2" placeholder="Enter new university name" style="display:none;" />
-              </label>
+                <input name="new_university_name" class="input input-bordered input-sm mt-2 w-full" placeholder="Enter new university name" style="display:none;" />
+              </div>
 
               <button class="btn btn-sm btn-secondary w-full mt-2" type="submit">Save Changes</button>
             </form>
             
             <div class="divider my-1"></div>
 
-            <form method="post" action="/courses/{{ course.code or course.id }}/settings/update" class="flex flex-col gap-3">
-              <h3 class="font-bold text-base border-b pb-2 mb-1">GPA Scale</h3>
-              <label class="form-control">
-                <span class="label-text text-xs font-semibold uppercase opacity-60">Scale</span>
-                <select name="gpa_scale" class="select select-bordered select-sm mt-1">
+            <form method="post" action="/courses/{{ course.code }}/settings/update" class="flex flex-col gap-3">
+              <div class="flex items-center justify-between border-b pb-2 mb-1">
+                <h3 class="font-bold text-base">GPA Scale</h3>
+                <a href="/settings" hx-boost="false" class="link link-primary text-xs">Grade &amp; Scale Settings</a>
+              </div>
+              <div class="form-control w-full relative">
+                <label class="label py-1">
+                  <span class="label-text text-xs font-semibold uppercase opacity-60">Scale</span>
+                </label>
+                <select name="gpa_scale" class="select select-bordered select-sm w-full">
                   <option value="4" {% if (gpa_max|default(4)) == 4 %}selected{% endif %}>4-Point (Standard)</option>
                   <option value="7" {% if (gpa_max|default(4)) == 7 %}selected{% endif %}>7-Point (Australian)</option>
                 </select>
-              </label>
+              </div>
               <p class="text-[11px] opacity-50 -mt-1">
                 4-Point: HD=4, D=3, C=2, P=1, F=0 &nbsp;|&nbsp; 7-Point: HD=7, D=6, C=5, P=4, F=0
               </p>
@@ -141,7 +155,7 @@
 
             <div class="divider my-1"></div>
 
-            <form method="post" action="/courses/{{ course.code or course.id }}/delete" onsubmit="return confirm('Delete this course? Semesters will be unassigned.');">
+            <form method="post" action="/courses/{{ course.code }}/delete" onsubmit="return confirm('Delete this course? Semesters will be unassigned.');">
               <button class="btn btn-sm btn-error btn-outline w-full" type="submit">Delete Course</button>
             </form>
           </div>
@@ -162,15 +176,18 @@
     {% endfor %}
 
     {% if ns.has_subjects %}
-      <div class="overflow-x-auto rounded-xl bg-base-100 shadow card-glow">
+      <div class="w-full overflow-x-auto rounded-xl bg-base-100 shadow card-glow">
         <table class="table table-zebra w-full">
           <thead>
             <tr>
-              <th>Subject Code</th>
+              <th class="whitespace-nowrap">Subject Code</th>
               <th>Subject Name</th>
-              <th>Semester</th>
-              <th>Year</th>
-              <th class="text-right">Credit Points</th>
+              <th class="hidden sm:table-cell">Semester</th>
+              <th class="hidden sm:table-cell">Year</th>
+              <th class="text-right whitespace-nowrap">
+                <span class="sm:hidden">CP</span>
+                <span class="hidden sm:inline">Credit Points</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -179,15 +196,21 @@
               {% if subs %}
                 {% for s in subs %}
                   <tr class="hover">
-                    <td class="font-mono text-sm">
+                    <td class="font-mono text-sm whitespace-nowrap">
                       <a class="link link-primary" href="/year/{{ sem.year }}/semester/{{ sem.name }}/subject/{{ s.subject_code }}">
                         {{ s.subject_code }}
                       </a>
                     </td>
-                    <td>{{ s.subject_name }}</td>
-                    <td><span class="badge badge-ghost badge-sm">{{ sem.name }}</span></td>
-                    <td class="tabular-nums">{{ sem.year }}</td>
-                    <td class="text-right tabular-nums">{{ s.credit_points }}</td>
+                    <td>
+                      <div>{{ s.subject_name }}</div>
+                      <div class="sm:hidden flex flex-wrap items-center gap-1.5 mt-0.5 text-xs opacity-75">
+                        <span class="badge badge-ghost badge-xs">{{ sem.name }}</span>
+                        <span class="tabular-nums">{{ sem.year }}</span>
+                      </div>
+                    </td>
+                    <td class="hidden sm:table-cell whitespace-nowrap"><span class="badge badge-ghost badge-sm">{{ sem.name }}</span></td>
+                    <td class="hidden sm:table-cell whitespace-nowrap tabular-nums">{{ sem.year }}</td>
+                    <td class="text-right whitespace-nowrap tabular-nums">{{ s.credit_points }}</td>
                   </tr>
                 {% endfor %}
               {% endif %}
@@ -214,7 +237,7 @@
                 <div class="font-semibold text-lg text-primary">{{ sem.name }}</div>
                 <div class="text-sm opacity-70 font-mono">{{ sem.year }}</div>
               </div>
-              <form method="post" action="/courses/{{ course.code or course.id }}/unassign-semester" hx-post="/courses/{{ course.code or course.id }}/unassign-semester" hx-target="body" hx-swap="outerHTML">
+              <form method="post" action="/courses/{{ course.code }}/unassign-semester" hx-post="/courses/{{ course.code }}/unassign-semester" hx-target="body" hx-swap="outerHTML">
                 <input type="hidden" name="semester_name" value="{{ sem.name }}" />
                 <input type="hidden" name="year" value="{{ sem.year }}" />
                 <button class="btn btn-xs btn-outline btn-error" type="submit" title="Remove from course">Remove</button>
@@ -223,14 +246,16 @@
             <a href="/year/{{ sem.year }}/semester/{{ sem.name }}" class="link link-primary text-sm">Open semester →</a>
             {% set subs = subjects_by_semester.get(sem.id) %}
             {% if subs and subs|length > 0 %}
-              <details class="mt-1 group">
-                <summary class="cursor-pointer text-xs opacity-70 hover:opacity-100">📚 {{ subs|length }} subject{% if subs|length != 1 %}s{% endif %}</summary>
-                <ul class="mt-2 space-y-1 text-xs pl-4">
+              <details class="mt-1 pt-2 border-t border-base-200 group">
+                <summary class="cursor-pointer text-xs font-medium opacity-75 hover:opacity-100 select-none">📚 {{ subs|length }} subject{% if subs|length != 1 %}s{% endif %}</summary>
+                <ul class="space-y-1 mt-2 pl-2">
                   {% for s in subs %}
-                    <li>
-                      <a class="link link-hover" href="/year/{{ s.year }}/semester/{{ s.semester_name }}/subject/{{ s.subject_code }}">
-                        {{ s.subject_code }} — {{ s.subject_name }}
-                      </a>
+                    <li class="flex flex-wrap items-center gap-2 py-1">
+                      <span class="badge badge-outline badge-sm font-mono font-medium shrink-0">{{ s.subject_code or s.code }}</span>
+                      <span class="text-xs sm:text-sm text-base-content/80 break-words">{{ s.subject_name or s.name }}</span>
+                      {% if s.credit_points is not none %}
+                        <span class="badge badge-ghost badge-xs text-[10px] text-base-content/60 ml-auto shrink-0">{{ s.credit_points }} CP</span>
+                      {% endif %}
                     </li>
                   {% endfor %}
                 </ul>
@@ -248,70 +273,76 @@
   </section>
 
   <!-- Management Panels -->
-  <section class="flex flex-col gap-4">
+  <section id="manage-assignments" class="flex flex-col gap-4 w-full">
     <h2 class="section-card-title text-xl">Manage Semester Assignments</h2>
-    <div class="grid md:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 w-full">
       <!-- Assign Single Semester -->
-      <div class="p-6 rounded-xl bg-base-100 shadow card-glow flex flex-col gap-4">
+      <div class="p-4 sm:p-6 rounded-xl bg-base-100 shadow card-glow flex flex-col gap-3 w-full relative">
         <h3 class="section-card-title">Add Semester</h3>
         <p class="text-sm opacity-70">Assign an unassigned semester to this course.</p>
-        <form hx-post="/courses/{{ course.code or course.id }}/assign-semester" hx-target="body" hx-swap="outerHTML" class="flex flex-col gap-3">
-          <label class="form-control w-full">
-            <span class="label-text text-sm font-medium">Available Semesters</span>
-            <select name="semester_key" class="select select-bordered select-sm" required>
+        <form hx-post="/courses/{{ course.code }}/assign-semester" hx-target="body" hx-swap="outerHTML" class="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center w-full">
+          <div class="form-control w-full relative">
+            <label class="label py-1">
+              <span class="label-text text-sm font-medium">Available Semesters</span>
+            </label>
+            <select name="semester_key" class="select select-bordered select-sm w-full" required>
               <option disabled selected value="">Select a semester</option>
               {% for semester in unassigned_semesters %}
                 <option value="{{ semester.name }}|{{ semester.year }}">{{ semester.name }} {{ semester.year }}</option>
               {% endfor %}
             </select>
-          </label>
-          <button class="btn btn-sm btn-secondary" type="submit">Add Semester</button>
+          </div>
+          <button class="btn btn-sm btn-secondary w-full sm:w-auto sm:self-end" type="submit">Add Semester</button>
         </form>
       </div>
 
       <!-- Assign by Year -->
-      <div class="p-6 rounded-xl bg-base-100 shadow card-glow flex flex-col gap-4">
+      <div class="p-4 sm:p-6 rounded-xl bg-base-100 shadow card-glow flex flex-col gap-3 w-full relative">
         <h3 class="section-card-title">Add Year</h3>
         <p class="text-sm opacity-70">Assign all unassigned semesters from a year at once.</p>
-        <form hx-post="/courses/{{ course.code or course.id }}/assign-year" hx-target="body" hx-swap="outerHTML" class="flex flex-col gap-3">
-          <label class="form-control w-full">
-            <span class="label-text text-sm font-medium">Available Years</span>
-            <select name="year" class="select select-bordered select-sm" required>
+        <form hx-post="/courses/{{ course.code }}/assign-year" hx-target="body" hx-swap="outerHTML" class="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center w-full">
+          <div class="form-control w-full relative">
+            <label class="label py-1">
+              <span class="label-text text-sm font-medium">Available Years</span>
+            </label>
+            <select name="year" class="select select-bordered select-sm w-full" required>
               <option disabled selected value="">Select a year</option>
               {% for y in unassigned_years %}
                 <option value="{{ y }}">{{ y }}</option>
               {% endfor %}
             </select>
-          </label>
-          <button class="btn btn-sm btn-secondary" type="submit">Add Year</button>
+          </div>
+          <button class="btn btn-sm btn-secondary w-full sm:w-auto sm:self-end" type="submit">Add Year</button>
         </form>
       </div>
 
       <!-- Assign All -->
-      <div class="p-6 rounded-xl bg-base-100 shadow card-glow flex flex-col gap-4">
+      <div class="p-4 sm:p-6 rounded-xl bg-base-100 shadow card-glow flex flex-col gap-3 w-full relative">
         <h3 class="section-card-title">Add All</h3>
         <p class="text-sm opacity-70">Assign all remaining unassigned semesters to this course.</p>
-        <form hx-post="/courses/{{ course.code or course.id }}/assign-all" hx-target="body" hx-swap="outerHTML" class="flex flex-col gap-3">
-          <button class="btn btn-sm btn-secondary" type="submit">Add All Semesters</button>
+        <form hx-post="/courses/{{ course.code }}/assign-all" hx-target="body" hx-swap="outerHTML" class="flex flex-wrap gap-2 w-full">
+          <button class="btn btn-sm btn-secondary w-full sm:w-auto" type="submit">Add All Semesters</button>
         </form>
       </div>
 
       <!-- Remove by Year -->
-      <div class="p-6 rounded-xl bg-base-100 shadow card-glow flex flex-col gap-4">
+      <div class="p-4 sm:p-6 rounded-xl bg-base-100 shadow card-glow flex flex-col gap-3 w-full relative">
         <h3 class="section-card-title">Remove Year</h3>
         <p class="text-sm opacity-70">Remove all semesters from a specific year.</p>
-        <form hx-post="/courses/{{ course.code or course.id }}/unassign-year" hx-target="body" hx-swap="outerHTML" class="flex flex-col gap-3">
-          <label class="form-control w-full">
-            <span class="label-text text-sm font-medium">Year to Remove</span>
-            <select name="year" class="select select-bordered select-sm" required>
+        <form hx-post="/courses/{{ course.code }}/unassign-year" hx-target="body" hx-swap="outerHTML" class="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center w-full">
+          <div class="form-control w-full relative">
+            <label class="label py-1">
+              <span class="label-text text-sm font-medium">Year to Remove</span>
+            </label>
+            <select name="year" class="select select-bordered select-sm w-full" required>
               <option disabled selected value="">Select a year</option>
               {% set assigned_years = (assigned_semesters | map(attribute='year') | list | unique) %}
               {% for y in assigned_years %}
                 <option value="{{ y }}">{{ y }}</option>
               {% endfor %}
             </select>
-          </label>
-          <button class="btn btn-sm btn-outline btn-error" type="submit">Remove Year</button>
+          </div>
+          <button class="btn btn-sm btn-outline btn-error w-full sm:w-auto sm:self-end" type="submit">Remove Year</button>
         </form>
       </div>
     </div>

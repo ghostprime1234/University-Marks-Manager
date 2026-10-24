@@ -1,8 +1,7 @@
-<div class="manage-panel hidden absolute inset-0 bg-white z-40">
-  <div class="relative p-4 rounded-lg bg-base-100 border border-base-300 hover:border-primary/70 hover:shadow-md transition card-glow flex flex-col gap-3 group animate-fade-in overflow-hidden">
+<div class="relative p-4 rounded-lg bg-base-100 border border-base-300 hover:border-primary/70 hover:shadow-md transition card-glow flex flex-col gap-3 group animate-fade-in overflow-hidden w-full">
   
   <div class="flex items-start justify-between gap-3">
-    <a href="/courses/{{ course.code if course.code is defined and course.code|trim != '' else course.id }}" class="flex-grow">
+    <a href="/courses/{{ course.code }}" class="flex-grow">
       <h3 class="text-lg font-semibold link link-hover text-primary">{{ course.name }}</h3>
       {% if course.code %}
         <p class="text-sm opacity-70 font-mono">{{ course.code }}</p>
@@ -15,11 +14,11 @@
     <details class="dropdown dropdown-bottom dropdown-end">
       <summary class="btn btn-ghost btn-sm">⋮</summary>
       <ul class="dropdown-content z-[60] menu p-2 shadow-xl bg-base-100 rounded-box w-52 border border-base-300">
-        <li><a href="/courses/{{ course.code if course.code is defined and course.code|trim != '' else course.id }}">Open Course</a></li>
+        <li><a href="/courses/{{ course.code }}">Open Course</a></li>
         <li><button type="button" onclick="const panel = this.closest('.card-glow').querySelector('.manage-panel'); panel.classList.remove('hidden'); panel.classList.add('flex');">Edit Details</button></li>
         <div class="divider my-0"></div>
         <li>
-          <form method="post" action="/courses/{{ course.code if course.code is defined and course.code|trim != '' else course.id }}/delete" onsubmit="return confirm('Delete this course?');">
+          <form method="post" action="/courses/{{ course.code }}/delete" onsubmit="return confirm('Delete this course?');">
             <button class="text-error">Delete Course</button>
           </form>
         </li>
@@ -41,7 +40,7 @@
   </div>
 
  <form method="post" 
-        action="/courses/{{ course.code if course.code is defined and course.code|trim != '' else course.id }}/update" 
+        action="/courses/{{ course.code }}/update" 
         class="manage-panel hidden absolute inset-0 w-full h-full flex flex-col justify-center items-start gap-3 bg-white !bg-opacity-100 border border-base-300 shadow-xl z-[70] p-4 rounded-lg">
     
     <div class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
@@ -60,5 +59,4 @@
       <button class="btn btn-sm btn-ghost flex-1 text-gray-500" type="button" onclick="this.closest('.manage-panel').classList.add('hidden')">Cancel</button>
     </div>
   </form>
-</div>
 </div>

@@ -344,7 +344,7 @@ def course_create_submit(
         request.session["current_course_name"] = course.name
         request.session["current_course_code"] = course.code
 
-    return RedirectResponse(url=f"/courses/{course.id}", status_code=303)
+    return RedirectResponse(url=f"/courses/{course.code}", status_code=303)
 
 
 @router.post("/profile/add-course")

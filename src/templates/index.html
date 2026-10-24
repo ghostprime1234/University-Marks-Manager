@@ -13,7 +13,10 @@
   <!-- Page heading -->
   <div class="flex flex-col items-center text-center gap-2 sm:gap-3">
     <h2 class="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight">Home — Semesters for {{ selected_year or 'All years' }}</h2>
-    <a href="/profile" class="btn btn-sm sm:btn-md md:btn-lg btn-outline">Manage Courses</a>
+    <div class="flex flex-wrap items-center justify-center gap-2">
+      <a href="/profile" hx-boost="false" class="btn btn-sm sm:btn-md btn-outline">Manage Courses</a>
+      <a href="/settings" hx-boost="false" class="btn btn-sm sm:btn-md btn-outline gap-1">⚙️ Grade &amp; Scale Settings</a>
+    </div>
   </div>
 
   {% if not no_courses_warning %}

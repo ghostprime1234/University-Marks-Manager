@@ -43,6 +43,13 @@ async def verify_user(request: Request):
     except HTTPException:
         pass
 
+    if not user_id and hasattr(request, "session") and request.session.get("user_id"):
+        try:
+            user_id = ensure_uuid(request.session.get("user_id"))
+            request.state.user_id = user_id
+        except Exception:
+            user_id = None
+
     if not user_id:
         # For normal browser requests, redirect to login
         hdr = request.headers.get

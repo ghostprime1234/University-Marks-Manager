@@ -3,20 +3,20 @@
 {% block title %}Manage Courses | University Marks Manager{% endblock %}
 
 {% block content %}
-<div class="flex flex-col gap-8">
-  <div class="flex items-center justify-between gap-4">
+<div class="flex flex-col gap-6 sm:gap-8 w-full">
+  <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
     <h1 class="site-title">Manage Courses</h1>
     <a href="/all" class="btn btn-sm md:btn-md btn-outline">Back to Home</a>
   </div>
 
-  <section class="p-6 rounded-xl bg-base-100 shadow card-glow">
-    <h2 class="section-card-title text-xl">Create New Course</h2>
+  <section class="p-4 sm:p-6 rounded-xl bg-base-100 shadow card-glow w-full">
+    <h2 class="section-card-title text-xl mb-2">Create New Course</h2>
     <form 
       hx-post="/courses/" 
       hx-target="#course-list" 
       hx-swap="outerHTML" 
       hx-on="htmx:afterRequest: this.reset(); toggleCustomScale(document.getElementById('grading_scale_id'))" 
-      class="flex flex-col gap-4"
+      class="flex flex-col gap-4 w-full"
     >
       <div class="form-control w-full">
         <label class="label">
@@ -65,17 +65,17 @@
         </select>
 
         <p class="mt-1 text-xs text-gray-500">
-          Need to see or edit all grading scales? <a href="/settings" class="link link-primary">Open grading scale settings</a>.
+          Need to see or edit all grading scales? <a href="/settings" hx-boost="false" class="link link-primary">Open grading scale settings</a>.
         </p>
 
-        <div id="custom_scale_div" class="mt-4 p-4 border border-base-300 rounded-lg bg-base-200/50" style="display: none;">
+        <div id="custom_scale_div" class="mt-4 p-3 sm:p-4 border border-base-300 rounded-lg bg-base-200/50 w-full" style="display: none;">
           <div class="form-control mb-4">
             <label class="label"><span class="label-text font-bold">Custom Scale Name</span></label>
             <input type="text" name="custom_grading_scale" class="input input-bordered input-sm w-full" placeholder="e.g. My University Scale">
           </div>
           
           <label class="label"><span class="label-text font-bold">Grade Mappings</span></label>
-          <div class="overflow-x-auto">
+          <div class="w-full overflow-x-auto">
             <table id="grading-scale-table" class="table table-sm w-full bg-base-100">
               <thead>
                 <tr>
@@ -89,22 +89,22 @@
               <tbody>
                 <tr>
                   <td>
-                    <input type="text" name="custom_grades[]" value="HD" class="input input-xs w-16" required>
+                    <input type="text" name="custom_grades[]" value="HD" class="input input-xs w-16 text-center tabular-nums" required>
                     <input type="hidden" name="custom_band_types[]" value="both">
                   </td>
                   <td><input type="text" name="custom_labels[]" value="High Distinction" class="input input-xs w-full" required></td>
-                  <td><input type="number" name="custom_min_marks[]" value="85" step="any" class="input input-xs w-16" required></td>
-                  <td><input type="number" name="custom_gpa_points[]" value="4.0" step="any" class="input input-xs w-16" required></td>
+                  <td><input type="number" name="custom_min_marks[]" value="85" step="any" class="input input-xs w-16 text-center tabular-nums" required></td>
+                  <td><input type="number" name="custom_gpa_points[]" value="4.0" step="any" class="input input-xs w-16 text-center tabular-nums" required></td>
                   <td></td>
                 </tr>
                 <tr>
                   <td>
-                    <input type="text" name="custom_grades[]" value="D" class="input input-xs w-16" required>
+                    <input type="text" name="custom_grades[]" value="D" class="input input-xs w-16 text-center tabular-nums" required>
                     <input type="hidden" name="custom_band_types[]" value="both">
                   </td>
                   <td><input type="text" name="custom_labels[]" value="Distinction" class="input input-xs w-full" required></td>
-                  <td><input type="number" name="custom_min_marks[]" value="75" step="any" class="input input-xs w-16" required></td>
-                  <td><input type="number" name="custom_gpa_points[]" value="3.0" step="any" class="input input-xs w-16" required></td>
+                  <td><input type="number" name="custom_min_marks[]" value="75" step="any" class="input input-xs w-16 text-center tabular-nums" required></td>
+                  <td><input type="number" name="custom_gpa_points[]" value="3.0" step="any" class="input input-xs w-16 text-center tabular-nums" required></td>
                   <td></td>
                 </tr>
               </tbody>
@@ -134,23 +134,25 @@
         <input 
           id="new_university_input" 
           name="new_university_name" 
-          class="input input-bordered input-sm md:input-md mt-2" 
+          class="input input-bordered input-sm md:input-md mt-2 w-full" 
           placeholder="Enter new university name" 
           style="display:none;" 
         />
       </div>
 
-      <div class="flex gap-2">
-        <button type="submit" class="btn btn-primary btn-sm md:btn-md">
+      <div class="flex flex-wrap gap-2 w-full">
+        <button type="submit" class="btn btn-primary btn-sm md:btn-md w-full sm:w-auto">
           Create Course
         </button>
       </div>
     </form>
   </section>
 
-  <section class="p-6 rounded-xl bg-base-100 shadow card-glow">
-    <h2 class="section-card-title text-xl">Existing Courses</h2>
-    {% include 'partials/course_list.html' %}
+  <section class="p-4 sm:p-6 rounded-xl bg-base-100 shadow card-glow w-full">
+    <h2 class="section-card-title text-xl mb-3">Existing Courses</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+      {% include 'partials/course_list.html' %}
+    </div>
   </section>
 </div>
 

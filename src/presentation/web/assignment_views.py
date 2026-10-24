@@ -362,28 +362,32 @@ def edit_assignment_form(
     safe_year_js = json.dumps(str(year))
     
     return HTMLResponse(f"""
-<td>
-    <input name='new_assessment' class='input input-xs w-24' value='{safe_assessment_text}' required />
-    <div class='flex items-center mt-1 gap-2'>
-        <label class='cursor-pointer label p-0'><span class='label-text text-[10px] mr-1'>Exam?</span><input type='checkbox' name='is_exam' value='true' class='checkbox checkbox-xs' {is_exam_checked} onchange="document.getElementById('edit-exam-type-select').disabled = !this.checked;" /></label>
-        <select id='edit-exam-type-select' name='exam_type' class='select select-xs' {'disabled' if not getattr(assignment, 'is_exam', False) else ''}>
-            <option value='assignment' {'selected' if exam_type_val == 'assignment' else ''}>Assignment</option>
-            <option value='main' {'selected' if exam_type_val == 'main' else ''}>Main</option>
-        </select>
+<td class='pl-2 pr-1 align-top'>
+    <div class='flex flex-col gap-1 w-full max-w-full'>
+        <input name='new_assessment' class='input input-bordered input-xs w-full' value='{safe_assessment_text}' required />
+        <div class='flex flex-wrap items-center gap-1.5 text-xs'>
+            <label class='cursor-pointer flex items-center gap-1 p-0'><span class='label-text text-[10px]'>Exam?</span><input type='checkbox' name='is_exam' value='true' class='checkbox checkbox-xs' {is_exam_checked} onchange="document.getElementById('edit-exam-type-select').disabled = !this.checked;" /></label>
+            <select id='edit-exam-type-select' name='exam_type' class='select select-bordered select-xs' {'disabled' if not getattr(assignment, 'is_exam', False) else ''}>
+                <option value='assignment' {'selected' if exam_type_val == 'assignment' else ''}>Assignment</option>
+                <option value='main' {'selected' if exam_type_val == 'main' else ''}>Main</option>
+            </select>
+        </div>
     </div>
 </td>
-<td><input name='category' class='input input-xs w-24' value='{safe_category_text}' placeholder='Category' /></td>
-<td><input name='weighted_mark' type='number' step='any' min='0' class='input input-xs w-16' value='{assignment.weighted_mark if assignment.weighted_mark is not None else ''}' placeholder='Weighted mark' /></td>
-<td class='assignment-unweighted'><input name='unweighted_mark' type='text' class='input input-xs w-16 bg-gray-200 cursor-not-allowed' style='background-color:#e5e7eb;cursor:not-allowed;' value="{'-' if assignment.grade_type in ['S','U'] else ('%.2f' % (float(assignment.unweighted_mark)*100) if assignment.unweighted_mark is not None else 'Pending')}" readonly tabindex='-1' /></td>
-<td><input name='mark_weight' type='number' step='any' min='0' class='input input-xs w-16' value='{assignment.mark_weight if assignment.mark_weight is not None else ''}' placeholder='Mark weight' /></td>
-<td><select name='grade_type' class='select select-xs w-16'>
+<td class='hidden md:table-cell align-top'><input name='category' class='input input-bordered input-xs w-full max-w-[9rem]' value='{safe_category_text}' placeholder='Category' /></td>
+<td class='px-1.5 sm:px-2 text-center tabular-nums align-top'><input name='weighted_mark' type='number' step='any' min='0' class='input input-bordered input-xs w-12 px-1 text-center tabular-nums' value='{assignment.weighted_mark if assignment.weighted_mark is not None else ''}' placeholder='Mark' /></td>
+<td class='assignment-unweighted hidden sm:table-cell px-1.5 sm:px-2 text-center tabular-nums align-top'><input name='unweighted_mark' type='text' class='input input-xs w-12 px-1 text-center tabular-nums bg-gray-200 cursor-not-allowed' style='background-color:#e5e7eb;cursor:not-allowed;' value="{'-' if assignment.grade_type in ['S','U'] else ('%.2f' % (float(assignment.unweighted_mark)*100) if assignment.unweighted_mark is not None else 'Pending')}" readonly tabindex='-1' /></td>
+<td class='px-2 text-center tabular-nums align-top'><input name='mark_weight' type='number' step='any' min='0' class='input input-bordered input-xs w-12 px-1 text-center tabular-nums' value='{assignment.mark_weight if assignment.mark_weight is not None else ''}' placeholder='Weight' /></td>
+<td class='hidden md:table-cell text-center align-top'><select name='grade_type' class='select select-bordered select-xs w-20'>
         <option value='numeric' {'selected' if assignment.grade_type == 'numeric' else ''}>Numeric</option>
         <option value='S' {'selected' if assignment.grade_type == 'S' else ''}>S</option>
         <option value='U' {'selected' if assignment.grade_type == 'U' else ''}>U</option>
     </select></td>
-<td class='flex gap-1'>
-    <button type='button' class='btn btn-xs btn-primary' onclick='window.submitInlineEditAssignmentRow({safe_assessment_js}, {safe_code_js}, {safe_semester_js}, {safe_year_js})'>Save</button>
-    <button type='button' class='btn btn-xs' onclick='window.cancelInlineEditAssignment()'>Cancel</button>
+<td class='w-px whitespace-nowrap pl-2 pr-2 text-right align-top'>
+    <div class='flex items-center justify-end gap-1'>
+        <button type='button' class='btn btn-xs btn-primary p-1 min-h-0 h-7 w-7 sm:w-auto sm:px-2' title='Save' onclick='window.submitInlineEditAssignmentRow({safe_assessment_js}, {safe_code_js}, {safe_semester_js}, {safe_year_js})'><span class='sm:hidden'>✓</span><span class='hidden sm:inline'>Save</span></button>
+        <button type='button' class='btn btn-xs p-1 min-h-0 h-7 w-7 sm:w-auto sm:px-2' title='Cancel' onclick='window.cancelInlineEditAssignment()'><span class='sm:hidden'>✕</span><span class='hidden sm:inline'>Cancel</span></button>
+    </div>
 </td>
 """)
 

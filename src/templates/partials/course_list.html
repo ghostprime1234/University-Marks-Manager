@@ -1,10 +1,10 @@
-<div id="course-list" class="flex flex-col gap-3">
+<div id="course-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full col-span-full">
   {% if courses %}
     {% for course in courses %}
       {% include 'partials/course_item.html' %}
     {% endfor %}
   {% else %}
-    <div class="p-8 rounded-xl border-dashed border-2 text-center opacity-70">
+    <div class="p-8 rounded-xl border-dashed border-2 text-center opacity-70 w-full col-span-full">
       No courses yet. Create your first course above.
     </div>
   {% endif %}

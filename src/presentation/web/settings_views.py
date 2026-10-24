@@ -1,12 +1,13 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlmodel import Session, col, select, desc
+from sqlmodel import Session, col, select, desc, func
 
 from src.presentation.api.deps import get_session
-from src.infrastructure.db.models import GradeScale, Course
+from src.infrastructure.db.models import GradeScale, Course, UserCourse
 from src.presentation.web.template_helpers import _render
 from src.core.services.grade_calculator import GradeCalculator
+from src.core.auth import ensure_uuid
 
 router = APIRouter()
 
@@ -16,25 +17,42 @@ def settings_page(request: Request, session: Session = Depends(get_session)):
     # Determine active course to show its scale
     sess = request.session
     active_course_id = sess.get("current_course_id")
-    
+
     # Robustly resolve active course ID if it's missing or stringified
     if active_course_id is None:
         code = sess.get("current_course_code")
         if code:
-            # Try to recover from code
-            course_obj = session.exec(select(Course).where(Course.code == code)).first()
-            if course_obj:
+            course_obj = session.exec(
+                select(Course).where(func.upper(func.trim(Course.code)) == str(code).strip().upper())
+            ).first()
+            if course_obj and course_obj.id is not None:
                 active_course_id = course_obj.id
-                # Heal session
                 sess["current_course_id"] = active_course_id
-    
+
+    # If still None, try resolving the user's default or first enrolled course
+    if active_course_id is None and sess.get("user_id"):
+        try:
+            uid = ensure_uuid(sess.get("user_id"))
+            uc = session.exec(
+                select(UserCourse).where(UserCourse.user_id == uid, UserCourse.is_default == True)
+            ).first() or session.exec(
+                select(UserCourse).where(UserCourse.user_id == uid)
+            ).first()
+            if uc and uc.course_id is not None:
+                active_course_id = uc.course_id
+                sess["current_course_id"] = active_course_id
+        except Exception:
+            pass
+
     current_scale_id = None
     course = None
-    if active_course_id:
+    if active_course_id is not None:
         try:
-            cid = int(str(active_course_id))
+            cid = int(str(active_course_id).strip())
             course = session.get(Course, cid)
             if course:
+                sess["current_course_name"] = course.name
+                sess["current_course_code"] = course.code
                 if getattr(course, "grading_scale_id", None):
                     current_scale_id = course.grading_scale_id
             else:
@@ -44,13 +62,16 @@ def settings_page(request: Request, session: Session = Depends(get_session)):
 
     # Ensure defaults exist for this scale (via calculator logic)
     gc = GradeCalculator(session)
-    # Pass the resolved ID (or None) to the calculator
-    gc._get_grade_scales(course.id if course else None)
-    
+    try:
+        gc._get_grade_scales(course.id if (course and course.id is not None) else None)
+    except Exception:
+        pass
+
     # Fetch all available scale names
-    all_scale_names = session.exec(select(GradeScale.scale_name).distinct()).all()
-    
-    # (Already handled above, remove duplicate block)
+    all_scale_names = [
+        name for name in session.exec(select(GradeScale.scale_name).distinct()).all() if name
+    ]
+
     # Get the scale_name for the current grading_scale id
     current_scale_name = None
     if current_scale_id:
@@ -80,7 +101,8 @@ def settings_page(request: Request, session: Session = Depends(get_session)):
         "gpa_bands": gpa_bands,
         "current_scale_name": current_scale_name,
         "course": course,
-        "all_scale_names": all_scale_names
+        "all_scale_names": all_scale_names,
+        "breadcrumbs": [{"label": "Settings", "url": None}],
     })
 
 
@@ -181,8 +203,7 @@ def add_grade_scale_band(
     return RedirectResponse(url="/profile", status_code=303)
 
 
-# NOTE: update_grades() below is a dead function — it has no route decorator and
-# is never registered.  It is preserved here for reference but should not be called.
+@router.post("/settings/grades/update")
 def update_grades(
     request: Request,
     scale_name: str = Form(...),
@@ -194,42 +215,70 @@ def update_grades(
     band_type: str = Form(...)
 ):
     """Update grade scales for a specific scale name and band type (wam/gpa)."""
-    # Remove existing bands for this scale_name and band_type
-    from sqlmodel import delete
-    query = delete(GradeScale).filter_by(scale_name=scale_name, band_type=band_type)
-    session.execute(query)
-
-    # Defensive: ensure min_marks/gpa_points are lists
+    scale_name = scale_name.strip()
     min_marks = min_marks if min_marks is not None else []
     gpa_points = gpa_points if gpa_points is not None else []
 
-    # Re-insert
+    existing_rows = session.exec(
+        select(GradeScale).where(
+            col(GradeScale.scale_name) == scale_name,
+            col(GradeScale.band_type).in_([band_type, "both"]),
+        )
+    ).all()
+    existing_by_grade = {r.grade.strip().upper(): r for r in existing_rows}
+    submitted_grades: set[str] = set()
+
     if band_type == "wam":
         for g, l, m in zip(grades, labels, min_marks):
-            if not g.strip():
+            g_norm = g.strip().upper()
+            if not g_norm:
                 continue
-            scale = GradeScale(
-                scale_name=scale_name,
-                grade=g.strip(),
-                label=l.strip(),
-                min_mark=m,
-                gpa_point=0.0,
-                band_type="wam"
-            )
-            session.add(scale)
+            submitted_grades.add(g_norm)
+            if g_norm in existing_by_grade:
+                row = existing_by_grade[g_norm]
+                row.grade = g.strip()
+                row.label = l.strip()
+                row.min_mark = m
+                session.add(row)
+            else:
+                session.add(
+                    GradeScale(
+                        scale_name=scale_name,
+                        grade=g.strip(),
+                        label=l.strip(),
+                        min_mark=m,
+                        gpa_point=0.0,
+                        band_type="both",
+                    )
+                )
     elif band_type == "gpa":
         for g, l, p in zip(grades, labels, gpa_points):
-            if not g.strip():
+            g_norm = g.strip().upper()
+            if not g_norm:
                 continue
-            scale = GradeScale(
-                scale_name=scale_name,
-                grade=g.strip(),
-                label=l.strip(),
-                min_mark=0.0,
-                gpa_point=p,
-                band_type="gpa"
-            )
-            session.add(scale)
+            submitted_grades.add(g_norm)
+            if g_norm in existing_by_grade:
+                row = existing_by_grade[g_norm]
+                row.grade = g.strip()
+                row.label = l.strip()
+                row.gpa_point = p
+                session.add(row)
+            else:
+                session.add(
+                    GradeScale(
+                        scale_name=scale_name,
+                        grade=g.strip(),
+                        label=l.strip(),
+                        min_mark=0.0,
+                        gpa_point=p,
+                        band_type="both",
+                    )
+                )
+
+    for g_norm, row in existing_by_grade.items():
+        if g_norm not in submitted_grades and row.band_type == band_type:
+            session.delete(row)
+
     session.commit()
     request.session["flash_message"] = f"{band_type.upper()} bands for '{scale_name}' updated successfully."
     return RedirectResponse(url="/settings", status_code=303)

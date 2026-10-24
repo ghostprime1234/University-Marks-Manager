@@ -8,12 +8,12 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" />
     <!-- <script src="https://cdn.tailwindcss.com"></script> -->
-    <link rel="stylesheet" href="/static/css/tailwind.css?v={{ current_year or 'v1' }}" />
+    <link rel="stylesheet" href="/static/css/tailwind.css?v={{ current_year or 'v1' }}-m9" />
     <!-- Custom overrides loaded after Tailwind/DaisyUI (modular files) -->
-    <link rel="stylesheet" href="/static/css/sections/headings.css?v={{ current_year or 'v1' }}" />
-    <link rel="stylesheet" href="/static/css/sections/grades.css?v={{ current_year or 'v1' }}" />
-    <link rel="stylesheet" href="/static/css/sections/cards.css?v={{ current_year or 'v1' }}" />
-    <link rel="stylesheet" href="/static/css/style.css?v={{ current_year or 'v1' }}" />
+    <link rel="stylesheet" href="/static/css/sections/headings.css?v={{ current_year or 'v1' }}-m9" />
+    <link rel="stylesheet" href="/static/css/sections/grades.css?v={{ current_year or 'v1' }}-m9" />
+    <link rel="stylesheet" href="/static/css/sections/cards.css?v={{ current_year or 'v1' }}-m9" />
+    <link rel="stylesheet" href="/static/css/style.css?v={{ current_year or 'v1' }}-m9" />
     <link rel="icon" href="/static/images/favicon.ico" type="image/x-icon" />
   </head>
   <body class="min-h-screen bg-base-200">
@@ -31,9 +31,10 @@
           <div class="site-header-active-course">
             <span class="opacity-60">Active Course</span>
             {% if request.session.get('current_course_id') %}
-              <span class="font-semibold">{{ request.session.get('current_course_name') or ('#' ~ request.session.get('current_course_id')) }}</span>
+              {% set active_course_code = request.session.get('current_course_code') or request.session.get('current_course_id') %}
+              <a href="/courses/{{ active_course_code }}" class="font-semibold hover:underline">{{ request.session.get('current_course_name') or ('#' ~ request.session.get('current_course_id')) }}</a>
               {% if request.session.get('current_course_code') %}
-                <span class="opacity-60">{{ request.session.get('current_course_code') }}</span>
+                <a href="/courses/{{ request.session.get('current_course_code') }}" class="opacity-60 hover:underline">{{ request.session.get('current_course_code') }}</a>
               {% endif %}
             {% else %}
               <span class="opacity-40">—</span>
@@ -64,11 +65,18 @@
             </div>
             <ul tabindex="0" class="dropdown-content z-[50] menu p-2 shadow bg-base-100 rounded-box w-56">
               <li class="menu-title text-xs opacity-60 px-3 py-1">{{ request.session.get('username') }}</li>
-              <li><a href="/profile" class="flex items-center gap-2">
+              <li><a href="/profile" hx-boost="false" class="flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
                 <span>Edit Profile</span>
+              </a></li>
+              <li><a href="/settings" hx-boost="false" class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>Grade &amp; Scale Settings</span>
               </a></li>
               <li><a href="/logout" onclick="handleSupabaseLogout(event)" class="flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

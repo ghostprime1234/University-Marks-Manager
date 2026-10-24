@@ -379,10 +379,10 @@ def create_course_page(
     )
 
 
-@router.get("/courses/{course_code}", response_class=HTMLResponse)
+@router.get("/courses/{course_identifier}", response_class=HTMLResponse)
 def get_course_detail_page(
     request: Request,
-    course_code: str,
+    course_identifier: str,
     session: Session = Depends(get_session),
 ):
     """Render the detail page for a specific course."""
@@ -391,7 +391,16 @@ def get_course_detail_page(
     semester_manager = SemesterManager(session)
     grade_calculator = GradeCalculator(session)
 
-    course = _resolve_course(course_manager, course_code)
+    # First check by course code (case-insensitive, supports numeric codes like "766")
+    course = session.exec(
+        select(Course).where(func.upper(func.trim(Course.code)) == course_identifier.strip().upper())
+    ).first()
+    if not course and course_identifier.isdigit():
+        course = session.exec(select(Course).where(Course.id == int(course_identifier))).first()
+        if course and course.code:
+            # Canonical redirect to course code URL
+            return RedirectResponse(url=f"/courses/{course.code.strip()}", status_code=302)
+
     if not course:
         # Handle course not found, maybe redirect or show an error page
         # For now, we'll just return a simple error
@@ -428,9 +437,14 @@ def get_course_detail_page(
     from src.infrastructure.db.models import University
     universities = session.exec(select(University)).all()
     template = jinja_env.get_template("course_detail.html")
+    breadcrumbs = [
+        {"label": "Courses", "url": "/courses"},
+        {"label": course.code or course.name, "url": None},
+    ]
     return template.render(
         request=request,
         course=course,
+        breadcrumbs=breadcrumbs,
         assigned_semesters=assigned_semesters,
         unassigned_semesters=unassigned_semesters,
         unassigned_years=unassigned_years,
@@ -446,16 +460,16 @@ def get_course_detail_page(
 # Removed subject-level linking UI per requirements
 
 
-@router.post("/courses/{course_code}/assign-semester", response_class=HTMLResponse)
+@router.post("/courses/{course_identifier}/assign-semester", response_class=HTMLResponse)
 def assign_semester_to_course_view(
     request: Request,
-    course_code: str,
+    course_identifier: str,
     semester_key: str = Form(...),
     session: Session = Depends(get_session),
 ):
     """Handle assigning a semester to a course and reload the page."""
     course_manager = CourseManager(session)
-    course = _resolve_course(course_manager, course_code)
+    course = _resolve_course(course_manager, course_identifier)
     if not course:
         return HTMLResponse("Course not found", status_code=404)
     assert course.id is not None
@@ -471,36 +485,38 @@ def assign_semester_to_course_view(
         return HTMLResponse("Semester not found", status_code=404)
     course_manager.assign_semester_to_course(course_id=course.id, semester_id=sem.id)  # type: ignore[arg-type]
 
-    # Redirect to the same page to see the change
+    # Redirect to the canonical course code page to see the change
+    canonical = course.code.strip() if course.code else course_identifier
     response = HTMLResponse()
-    response.headers["HX-Redirect"] = f"/courses/{course_code}"
+    response.headers["HX-Redirect"] = f"/courses/{canonical}"
     return response
 
 
-@router.post("/courses/{course_code}/assign-year", response_class=HTMLResponse)
+@router.post("/courses/{course_identifier}/assign-year", response_class=HTMLResponse)
 def assign_year_to_course_view(
     request: Request,
-    course_code: str,
+    course_identifier: str,
     year: int = Form(...),
     session: Session = Depends(get_session),
 ):
     """Assign all semesters for a given year to a course and reload the page."""
     course_manager = CourseManager(session)
-    course = _resolve_course(course_manager, course_code)
+    course = _resolve_course(course_manager, course_identifier)
     if not course:
         return HTMLResponse("Course not found", status_code=404)
     assert course.id is not None
     course_manager.assign_year_to_course(course_id=course.id, year=year)
 
+    canonical = course.code.strip() if course.code else course_identifier
     response = HTMLResponse()
-    response.headers["HX-Redirect"] = f"/courses/{course_code}"
+    response.headers["HX-Redirect"] = f"/courses/{canonical}"
     return response
 
 
-@router.post("/courses/{course_code}/select")
+@router.post("/courses/{course_identifier}/select")
 def select_current_course(
     request: Request,
-    course_code: str,
+    course_identifier: str,
     session: Session = Depends(get_session),
 ):
     """Persist the selected course in the session and redirect to Home reliably.
@@ -510,7 +526,7 @@ def select_current_course(
     # Minimal session payload; name can be looked up lazily if needed
     sess = request.session
     # Resolve basic course info for display in header (supports code or legacy id)
-    course = _resolve_course(CourseManager(session), course_code)
+    course = _resolve_course(CourseManager(session), course_identifier)
     if course:
         sess["current_course_id"] = course.id
         sess["current_course_name"] = course.name
@@ -597,36 +613,37 @@ def clear_current_course(
     return response
 
 
-@router.post("/courses/{course_code}/assign-all", response_class=HTMLResponse)
+@router.post("/courses/{course_identifier}/assign-all", response_class=HTMLResponse)
 def assign_all_semesters_to_course_view(
     request: Request,
-    course_code: str,
+    course_identifier: str,
     session: Session = Depends(get_session),
 ):
     """Assign all unassigned semesters to a course and reload the page."""
     course_manager = CourseManager(session)
-    course = _resolve_course(course_manager, course_code)
+    course = _resolve_course(course_manager, course_identifier)
     if not course:
         return HTMLResponse("Course not found", status_code=404)
     assert course.id is not None
     course_manager.assign_all_semesters_to_course(course_id=course.id)
 
+    canonical = course.code.strip() if course.code else course_identifier
     response = HTMLResponse()
-    response.headers["HX-Redirect"] = f"/courses/{course_code}"
+    response.headers["HX-Redirect"] = f"/courses/{canonical}"
     return response
 
 
-@router.post("/courses/{course_code}/unassign-semester", response_class=HTMLResponse)
+@router.post("/courses/{course_identifier}/unassign-semester", response_class=HTMLResponse)
 def unassign_semester_from_course_view(
     request: Request,
-    course_code: str,
+    course_identifier: str,
     semester_name: str = Form(...),
     year: int = Form(...),
     session: Session = Depends(get_session),
 ):
     """Remove a semester from the course."""
     course_manager = CourseManager(session)
-    course = _resolve_course(course_manager, course_code)
+    course = _resolve_course(course_manager, course_identifier)
     if not course:
         return HTMLResponse("Course not found", status_code=404)
     from sqlmodel import select
@@ -634,37 +651,39 @@ def unassign_semester_from_course_view(
     if not sem:
         return HTMLResponse("Semester not found", status_code=404)
     course_manager.unassign_semester_from_course(course_id=course.id, semester_id=sem.id)  # type: ignore[arg-type]
+    canonical = course.code.strip() if course.code else course_identifier
     if request.headers.get("HX-Request"):
         response = HTMLResponse()
-        response.headers["HX-Redirect"] = f"/courses/{course_code}"
+        response.headers["HX-Redirect"] = f"/courses/{canonical}"
         return response
-    return RedirectResponse(url=f"/courses/{course_code}", status_code=303)
+    return RedirectResponse(url=f"/courses/{canonical}", status_code=303)
 
 
-@router.post("/courses/{course_code}/unassign-year", response_class=HTMLResponse)
+@router.post("/courses/{course_identifier}/unassign-year", response_class=HTMLResponse)
 def unassign_year_from_course_view(
     request: Request,
-    course_code: str,
+    course_identifier: str,
     year: int = Form(...),
     session: Session = Depends(get_session),
 ):
     """Remove all semesters for the given year from the course."""
     course_manager = CourseManager(session)
-    course = _resolve_course(course_manager, course_code)
+    course = _resolve_course(course_manager, course_identifier)
     if not course:
         return HTMLResponse("Course not found", status_code=404)
     assert course.id is not None
     course_manager.unassign_year_from_course(course_id=course.id, year=year)
+    canonical = course.code.strip() if course.code else course_identifier
     if request.headers.get("HX-Request"):
         response = HTMLResponse()
-        response.headers["HX-Redirect"] = f"/courses/{course_code}"
+        response.headers["HX-Redirect"] = f"/courses/{canonical}"
         return response
-    return RedirectResponse(url=f"/courses/{course_code}", status_code=303)
+    return RedirectResponse(url=f"/courses/{canonical}", status_code=303)
 
-@router.post("/courses/{course_code}/update", response_class=HTMLResponse)
+@router.post("/courses/{course_identifier}/update", response_class=HTMLResponse)
 def update_course_view(
     request: Request,
-    course_code: str,
+    course_identifier: str,
     name: str = Form(...),
     code: str = Form(...),
     university_id: str = Form(None),
@@ -673,7 +692,7 @@ def update_course_view(
 ):
     """Update course name, code, and university. Create university if needed."""
     cm = CourseManager(session)
-    course = _resolve_course(cm, course_code)
+    course = _resolve_course(cm, course_identifier)
     if not course:
         return HTMLResponse("Course not found", status_code=404)
     try:
@@ -710,17 +729,17 @@ def update_course_view(
     return RedirectResponse(url=target, status_code=303)
 
 
-@router.post("/courses/{course_code}/settings/update", response_class=HTMLResponse)
+@router.post("/courses/{course_identifier}/settings/update", response_class=HTMLResponse)
 def update_course_settings_view(
     request: Request,
-    course_code: str,
+    course_identifier: str,
     gpa_scale: int = Form(...),
     return_to: Optional[str] = Form(None),
     session: Session = Depends(get_session),
 ):
     """Update per-course GPA scale and sync the linked grading scale rows."""
     cm = CourseManager(session)
-    course = _resolve_course(cm, course_code)
+    course = _resolve_course(cm, course_identifier)
     if not course or course.id is None:
         return HTMLResponse("Course not found", status_code=404)
     # Validate dynamically: accepted values are the integer max GPA points of
@@ -740,8 +759,9 @@ def update_course_settings_view(
         )
     cm.update_gpa_scale(course.id, gpa_scale)
     # Honour an explicit return_to path supplied by the caller (e.g. "/profile");
-    # fall back to the course detail page.
-    target = return_to if (return_to and return_to.startswith("/")) else f"/courses/{course_code}"
+    # fall back to the canonical course detail page.
+    canonical = course.code.strip() if course.code else course_identifier
+    target = return_to if (return_to and return_to.startswith("/")) else f"/courses/{canonical}"
     if request.headers.get("HX-Request"):
         resp = HTMLResponse()
         resp.headers["HX-Redirect"] = target
@@ -749,15 +769,15 @@ def update_course_settings_view(
     return RedirectResponse(url=target, status_code=303)
 
 
-@router.post("/courses/{course_code}/delete", response_class=HTMLResponse)
+@router.post("/courses/{course_identifier}/delete", response_class=HTMLResponse)
 def delete_course_view(
     request: Request,
-    course_code: str,
+    course_identifier: str,
     session: Session = Depends(get_session),
 ):
     """Delete a course and redirect to courses list; clears active banner if needed."""
     cm = CourseManager(session)
-    course = _resolve_course(cm, course_code)
+    course = _resolve_course(cm, course_identifier)
     if not course:
         return HTMLResponse("Course not found", status_code=404)
     cm.delete_course(course.id)  # type: ignore[arg-type]

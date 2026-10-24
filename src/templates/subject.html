@@ -13,16 +13,16 @@
 </div>
 {% endif %}
 
-<div class="flex flex-col gap-6">
-  <div class="flex items-start justify-between gap-4">
-    <div>
-      <h2 class="subject-title flex flex-wrap items-center gap-3">
+<div class="flex flex-col gap-6 min-w-0 w-full max-w-full">
+  <div class="flex items-start justify-between gap-2">
+    <div class="min-w-0 flex-1">
+      <h2 class="subject-title flex flex-wrap items-center gap-x-3 gap-y-1">
         <span id="subject-code-display">{{ subject.subject_code }}</span>
         <span id="subject-name-display">{{ subject.subject_name }}</span>
       </h2>
       <p class="semester-title mt-1"><span>{{ semester }}</span> <span class="semester-year">{{ year }}</span></p>
     </div>
-    <a id="edit-subject-btn" class="btn btn-xs btn-circle btn-ghost" href="/year/{{ year }}/semester/{{ semester }}/subject/{{ subject.subject_code }}/settings" title="Open subject settings">&#9881;</a>
+    <a id="edit-subject-btn" class="btn btn-xs btn-circle btn-ghost shrink-0" href="/year/{{ year }}/semester/{{ semester }}/subject/{{ subject.subject_code }}/settings" title="Open subject settings">&#9881;</a>
   </div>
 
   <div class="rounded-2xl border border-base-300 bg-base-100 shadow-sm p-4 md:p-5">
@@ -35,8 +35,8 @@
     </div>
   </div>
 
-  <div class="grid gap-6 lg:grid-cols-2">
-    <div class="prerequisite-section w-full">
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 min-w-0 w-full">
+    <div class="prerequisite-section min-w-0 w-full">
       <h3 class="font-semibold mb-2">Prerequisites</h3>
       <ul class="list-disc list-inside mb-2">
         {% if prerequisites and prerequisites|length > 0 %}
@@ -66,15 +66,15 @@
       <div id="add-prerequisite-form-section" class="hidden">
         <form method="post" action="/semester/{{semester}}/subject/{{subject.subject_code}}/prerequisite/add" class="flex flex-col md:flex-row gap-2 items-center">
           <input type="hidden" name="year" value="{{year}}" />
-          <div class="flex gap-2 items-center w-full">
-              <select name="prerequisite_subject_id" class="input input-xs w-48">
+          <div class="flex flex-wrap gap-2 items-center w-full">
+              <select name="prerequisite_subject_id" class="input input-xs w-full sm:w-48">
                 <option value="">Select subject...</option>
                 {% for subj in candidate_subjects %}
                   <option value="{{ subj.id }}">{{ subj.subject_code }} - {{ subj.subject_name }}</option>
                 {% endfor %}
               </select>
               <span class="text-xs">or</span>
-            <input name="custom_prerequisite" class="input input-xs flex-1" placeholder="Or enter a custom prerequisite (free text)" />
+            <input name="custom_prerequisite" class="input input-xs flex-1 min-w-[10rem]" placeholder="Or enter a custom prerequisite (free text)" />
             <label class="flex items-center gap-1 ml-2">
               <input type="checkbox" name="is_corequisite" value="1" class="checkbox checkbox-xs" />
               <span class="text-xs">Co-requisite</span>
@@ -168,15 +168,15 @@
   </script>
 
 <div class="block w-full mt-8">
-  <div class="mb-4 flex flex-row items-center gap-2">
-    <div class="flex-1">
+  <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+    <div>
       {% if subject.is_finalized %}
       <button class="btn btn-sm btn-primary btn-disabled" disabled title="Uncheck Finalized to add assignments">Add Assignment</button>
       {% else %}
       <button class="btn btn-sm btn-primary" id="show-add-assignment-form" type="button" onclick="toggleSection('add-assignment-form', false)">Add Assignment</button>
       {% endif %}
     </div>
-    <div class="flex-1 flex items-center justify-end gap-3">
+    <div class="flex flex-wrap items-center justify-end gap-3">
       {# Finalized toggle — submits immediately on change #}
       <form method="post" action="/semester/{{ semester }}/subject/{{ subject.subject_code }}/finalize" id="finalize-form">
         <input type="hidden" name="year" value="{{ year }}" />
@@ -201,8 +201,8 @@
     </div>
   </div>
 
-  <div class="flex flex-row gap-2 mb-6">
-    <div id="add-assignment-form-section" class="flex-1 hidden">
+  <div class="flex flex-col sm:flex-row gap-2 w-full mb-6">
+    <div id="add-assignment-form-section" class="w-full sm:flex-1 hidden">
       <form id="add-assignment-form" class="p-3 border border-gray-300 rounded-xl bg-base-200 space-y-2" method="post" action="/semester/{{ semester }}/subject/{{ subject.subject_code }}/assignment/create">
         <input type="hidden" name="year" value="{{ year }}" />
         <div>
@@ -228,7 +228,7 @@
       </form>
     </div>
 
-    <div id="add-total-mark-form-section" class="flex-1 hidden">
+    <div id="add-total-mark-form-section" class="w-full sm:flex-1 hidden">
       {% if subject.has_exam %}
         <div class="mb-2 p-2 rounded bg-base-100 border border-info text-xs text-left">
           <div><strong>Current Exam Weight:</strong> {{ '%.2f' % final_exam_mark_weight if final_exam_mark_weight is defined else '-' }}%</div>
@@ -270,106 +270,117 @@
       {% endif %}
     </div>
 
-    <div id="panel-assignments">
-      <div class="overflow-x-auto mb-6">
-        <table class="table table-sm w-full border-separate border-2 border-gray-400 rounded-xl" style="border-spacing: 0;">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Category</th>
-              <th>Mark</th>
-              <th>Score (<span class="text-[10px]">%</span>)</th>
-              <th>Weight (<span class="text-[10px]">%</span>)</th>
-              <th>Type</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-         <tbody>
-          {# compute total assessment weight for this subject so we can show contribution/total #}
-          {% set total_weight = 0.0 %}
-          {% for _a in assignments %}
-            {% set total_weight = total_weight + (_a.mark_weight|float if _a.mark_weight is not none else 0.0) %}
-          {% endfor %}
+    <div id="panel-assignments" class="min-w-0 w-full">
+      <div class="rounded-box border-2 border-gray-400 overflow-hidden mx-auto w-full max-w-full mb-6">
+        <div class="w-full overflow-x-auto">
+          <table class="table table-sm w-full max-w-full" style="border-spacing: 0;">
+            <thead>
+              <tr>
+                <th class="pl-2 pr-1">Title</th>
+                <th class="hidden md:table-cell">Category</th>
+                <th class="text-center tabular-nums whitespace-nowrap px-1.5 sm:px-2">Mark</th>
+                <th class="hidden sm:table-cell text-center tabular-nums whitespace-nowrap px-1.5 sm:px-2">Score (<span class="text-[10px]">%</span>)</th>
+                <th class="text-center tabular-nums whitespace-nowrap px-2">Weight (<span class="text-[10px]">%</span>)</th>
+                <th class="hidden md:table-cell text-center">Type</th>
+                <th class="w-px whitespace-nowrap pl-2 pr-2 text-right">Actions</th>
+              </tr>
+            </thead>
+           <tbody>
+            {# compute total assessment weight for this subject so we can show contribution/total #}
+            {% set total_weight = 0.0 %}
+            {% for _a in assignments %}
+              {% set total_weight = total_weight + (_a.mark_weight|float if _a.mark_weight is not none else 0.0) %}
+            {% endfor %}
 
-          {% for assignment in assignments %}
-            <tr id="assignment-row-{{ loop.index }}" class="assignment-row"
-              data-assessment="{{ assignment.assessment }}"
-              data-category="{{ assignment.category or '' }}"
-              data-code="{{ subject.subject_code }}"
-              data-semester="{{ semester }}"
-              data-year="{{ year }}"
-              data-grade-type="{{ assignment.grade_type }}"
-              data-unweighted-mark="{% if assignment.grade_type in ['S','U'] %}-{% else %}{{ '%.2f' % ((assignment.unweighted_mark|float) * 100) if assignment.unweighted_mark is not none else 'Pending' }}{% endif %}">
-            <td class="assignment-title">{{ assignment.assessment }}</td>
-            <td class="assignment-category">{{ assignment.category or 'Uncategorized' }}</td>
-            <td class="assignment-mark">
-              {% if assignment.grade_type in ['S','U'] %}
-                {{ assignment.grade_type }}
-              {% else %}
-                {{ '%.2f' % (assignment.weighted_mark|float) if assignment.weighted_mark is not none else '0.00' }}
-              {% endif %}
-            </td>
-            <td class="assignment-raw">
-              {% if assignment.grade_type in ['S','U'] %}
-                -
-              {% else %}
-                {% if assignment.unweighted_mark is not none %}
-                  {% set u = assignment.unweighted_mark|float %}
-                  <span class="whitespace-nowrap">{{ '%.2f' % (u * 100) }}</span>
-                {% else %}
-                  Pending
-                {% endif %}
-              {% endif %}
-            </td>
-            <td class="assignment-weight">
-              {% if assignment.grade_type in ['S','U'] %}
-                -
-              {% else %}
-                {{ '%.2f' % (assignment.mark_weight|float) if assignment.mark_weight is not none else '0.00' }}
-              {% endif %}
-            </td>
-            <td class="assignment-type">{{ assignment.grade_type }}</td> <!-- Add this line -->
-            <td class="flex gap-1">
-              {% if subject.is_finalized %}
-              <span class="text-xs opacity-40 italic self-center">Locked</span>
-              {% else %}
-              <form method="post" action="/semester/{{ semester }}/subject/{{ subject.subject_code }}/assignment/{{ assignment.assessment }}/{{ year }}/delete" style="display:inline;" onsubmit="return confirm('Delete this assignment?');">
-                <input type="hidden" name="year" value="{{ year }}" />
-                <button class="btn btn-xs btn-error" type="submit">✕</button>
-              </form>
-              <button
-                type="button"
-                class="btn btn-xs btn-outline edit-assignment-btn"
-                data-index="{{ loop.index }}"
+            {% for assignment in assignments %}
+              <tr id="assignment-row-{{ loop.index }}" class="assignment-row"
                 data-assessment="{{ assignment.assessment }}"
                 data-category="{{ assignment.category or '' }}"
-                data-mark="{{ assignment.weighted_mark }}"
-                data-weight="{{ assignment.mark_weight }}"
-              >Edit</button>
-              {% endif %}
-           </td>
-          </tr>
-          {% endfor %}
-          {% if assignments|length == 0 %}
-          <tr><td colspan="7" class="opacity-70 text-center">No assignments.</td></tr>
-          {% endif %}
-        </tbody>
-     </table>
+                data-code="{{ subject.subject_code }}"
+                data-semester="{{ semester }}"
+                data-year="{{ year }}"
+                data-grade-type="{{ assignment.grade_type }}"
+                data-unweighted-mark="{% if assignment.grade_type in ['S','U'] %}-{% else %}{{ '%.2f' % ((assignment.unweighted_mark|float) * 100) if assignment.unweighted_mark is not none else 'Pending' }}{% endif %}">
+              <td class="assignment-title whitespace-normal break-words pl-2 pr-1">
+                <div>{{ assignment.assessment }}</div>
+                <div class="md:hidden mt-0.5">
+                  <span class="badge badge-ghost badge-xs text-[10px]">{{ assignment.category or 'Uncategorized' }}</span>
+                </div>
+              </td>
+              <td class="assignment-category hidden md:table-cell">{{ assignment.category or 'Uncategorized' }}</td>
+              <td class="assignment-mark text-center tabular-nums whitespace-nowrap px-1.5 sm:px-2">
+                {% if assignment.grade_type in ['S','U'] %}
+                  {{ assignment.grade_type }}
+                {% else %}
+                  {{ '%.2f' % (assignment.weighted_mark|float) if assignment.weighted_mark is not none else '0.00' }}
+                {% endif %}
+              </td>
+              <td class="assignment-raw hidden sm:table-cell text-center tabular-nums whitespace-nowrap px-1.5 sm:px-2">
+                {% if assignment.grade_type in ['S','U'] %}
+                  -
+                {% else %}
+                  {% if assignment.unweighted_mark is not none %}
+                    {% set u = assignment.unweighted_mark|float %}
+                    <span class="whitespace-nowrap">{{ '%.2f' % (u * 100) }}</span>
+                  {% else %}
+                    Pending
+                  {% endif %}
+                {% endif %}
+              </td>
+              <td class="assignment-weight text-center tabular-nums whitespace-nowrap px-2">
+                {% if assignment.grade_type in ['S','U'] %}
+                  -
+                {% else %}
+                  {{ '%.2f' % (assignment.mark_weight|float) if assignment.mark_weight is not none else '0.00' }}
+                {% endif %}
+              </td>
+              <td class="assignment-type hidden md:table-cell text-center">{{ assignment.grade_type }}</td>
+              <td class="w-px whitespace-nowrap pl-2 pr-2 text-right">
+                <div class="flex items-center justify-end gap-1">
+                  {% if subject.is_finalized %}
+                  <span class="text-xs opacity-40 italic self-center">Locked</span>
+                  {% else %}
+                  <form method="post" action="/semester/{{ semester }}/subject/{{ subject.subject_code }}/assignment/{{ assignment.assessment }}/{{ year }}/delete" style="display:inline;" onsubmit="return confirm('Delete this assignment?');">
+                    <input type="hidden" name="year" value="{{ year }}" />
+                    <button class="btn btn-xs btn-error p-1 min-h-0 h-7 w-7" type="submit" title="Delete assignment">✕</button>
+                  </form>
+                  <button
+                    type="button"
+                    class="btn btn-xs btn-outline p-1 min-h-0 h-7 w-7 sm:w-auto sm:px-2 edit-assignment-btn"
+                    data-index="{{ loop.index }}"
+                    data-assessment="{{ assignment.assessment }}"
+                    data-category="{{ assignment.category or '' }}"
+                    data-mark="{{ assignment.weighted_mark }}"
+                    data-weight="{{ assignment.mark_weight }}"
+                    title="Edit assignment"
+                  ><span class="sm:hidden" aria-hidden="true">✏️</span><span class="hidden sm:inline">Edit</span></button>
+                  {% endif %}
+                </div>
+             </td>
+            </tr>
+            {% endfor %}
+            {% if assignments|length == 0 %}
+            <tr><td colspan="7" class="opacity-70 text-center">No assignments.</td></tr>
+            {% endif %}
+          </tbody>
+       </table>
+      </div>
     </div>
   </div>
 
    <div id="panel-summary" class="hidden block w-full clear-both">
-    <div class="overflow-x-auto p-2 w-full">        
-      {% set assessment_summary = assessment_summary if assessment_summary is defined else {'standalone_assessments': [], 'grouped_assessments': {}} %}
-      {% set standalone_assessments = assessment_summary.standalone_assessments if assessment_summary.standalone_assessments is defined else [] %}
-      {% set grouped_assessments = assessment_summary.grouped_assessments if assessment_summary.grouped_assessments is defined else {} %}
-      <table class="table table-sm w-full border-separate border-2 border-teal-300 rounded-xl">
+    <div class="rounded-box border-2 border-teal-300 overflow-hidden w-full mb-6">
+      <div class="w-full overflow-x-auto">        
+        {% set assessment_summary = assessment_summary if assessment_summary is defined else {'standalone_assessments': [], 'grouped_assessments': {}} %}
+        {% set standalone_assessments = assessment_summary.standalone_assessments if assessment_summary.standalone_assessments is defined else [] %}
+        {% set grouped_assessments = assessment_summary.grouped_assessments if assessment_summary.grouped_assessments is defined else {} %}
+        <table class="table table-sm w-full" style="border-spacing: 0;">
         <thead class="bg-teal-600 text-white">
           <tr>
             <th class="text-left">Category</th>
-            <th class="text-center">Status</th>
-            <th class="text-center">Items</th>
-            <th class="text-right">Unweighted Avg (%)</th>
+            <th class="hidden sm:table-cell text-center">Status</th>
+            <th class="hidden sm:table-cell text-center">Items</th>
+            <th class="hidden sm:table-cell text-right">Unweighted Avg (%)</th>
             <th class="text-right">Weight Total (%)</th>
             <th class="text-right">Weighted Score</th>
           </tr>
@@ -383,25 +394,25 @@
                   <span class="badge badge-xs badge-warning ml-1">+{{ row.bonus_count }} Bonus</span>
                 {% endif %}
               </td>
-              <td class="px-4 py-2 text-center text-gray-600">
+              <td class="hidden sm:table-cell px-4 py-2 text-center text-gray-600">
                 {% if row.display_status is defined %}
                   <span class="badge badge-xs">{{ row.display_status }}</span>
                 {% else %}
                   <span class="badge badge-xs">{{ 'Grouped' if row.count > 1 else 'Standalone' }}</span>
                 {% endif %}
               </td>
-              <td class="px-4 py-2 text-center text-gray-600">{{ row.count }}</td>
-              <td class="px-4 py-2 text-right text-gray-600">
+              <td class="hidden sm:table-cell px-4 py-2 text-center text-gray-600 tabular-nums">{{ row.count }}</td>
+              <td class="hidden sm:table-cell px-4 py-2 text-right text-gray-600 tabular-nums">
                 {% if row.has_scored_items is defined and not row.has_scored_items %}
                   Pending
                 {% else %}
                   {{ "%.2f"|format((row.unweighted_avg | default(0, true)) * 100) }}%
                 {% endif %}
               </td>
-              <td class="px-4 py-2 text-right text-gray-600">
+              <td class="px-4 py-2 text-right text-gray-600 tabular-nums">
                 {{ "%.2f"|format(row.total_weight) }}%
               </td>
-              <td class="px-4 py-2 text-right font-bold text-teal-700">
+              <td class="px-4 py-2 text-right font-bold text-teal-700 tabular-nums">
                 {% if row.has_scored_items is defined and not row.has_scored_items %}
                   Pending
                 {% else %}
@@ -413,11 +424,12 @@
         </tbody>
         <tfoot>
           <tr class="bg-teal-50 font-bold">
-            <td colspan="4" class="px-4 py-3 text-right uppercase text-xs text-gray-500">Total Calculation</td>
-            <td class="px-4 py-3 text-right border-t-2 border-teal-400">
+            <td class="sm:hidden px-4 py-3 text-right uppercase text-xs text-gray-500">Total Calculation</td>
+            <td colspan="4" class="hidden sm:table-cell px-4 py-3 text-right uppercase text-xs text-gray-500">Total Calculation</td>
+            <td class="px-4 py-3 text-right border-t-2 border-teal-400 tabular-nums">
               {{ "%.2f"|format(summaries|sum(attribute='total_weight')) }}%
             </td>
-            <td class="px-4 py-3 text-right text-lg text-teal-900 border-t-2 border-teal-400">
+            <td class="px-4 py-3 text-right text-lg text-teal-900 border-t-2 border-teal-400 tabular-nums">
               {{ "%.2f"|format(total_achieved if total_achieved is defined and total_achieved is not none else summaries|sum(attribute='weighted_score')) }}
               {% if subject.is_finalized %}
               <span class="ml-1 inline-flex items-center gap-0.5 text-xs font-semibold text-amber-700 opacity-80" title="Total locked at finalization">
@@ -429,6 +441,7 @@
           </tr>
         </tfoot>
       </table>
+      </div>
     </div>
 
     <div class="mt-8 block w-full bg-base-200 rounded-xl p-6 border border-base-300">
@@ -476,6 +489,7 @@
       </div>
     </div>
   </div>
+</div>
 </div>
 <script>
 // Shared global variables for JS logic
@@ -557,27 +571,31 @@ function startInlineEditAssignment(index, assessment, mark, weight) {
 
   // Use the correct backend URL!
   row.innerHTML = `
-    <td class="assignment-title" style="min-width:180px;">
-      <input id="assignment-title" name="assessment" class="input input-xs w-full" placeholder="Assignment title" value="${safeAssessment}" required />
+    <td class="assignment-title pl-2 pr-1 align-top">
+      <div class="flex flex-col gap-1 w-full max-w-full">
+        <input id="assignment-title" name="assessment" class="input input-bordered input-xs w-full" placeholder="Assignment title" value="${safeAssessment}" required />
+      </div>
     </td>
-    <td class="assignment-category" style="min-width:150px;">
-      <input name="category" class="input input-xs w-full" placeholder="Category" value="${safeCategory}" />
+    <td class="assignment-category hidden md:table-cell align-top">
+      <input name="category" class="input input-bordered input-xs w-full" placeholder="Category" value="${safeCategory}" />
     </td>
-    <td class="assignment-mark" style="width:70px;">
-      <input name="weighted_mark" type="number" step="0.01" class="input input-xs w-16 text-right" value="${safeMark}" required />
+    <td class="assignment-mark px-1.5 sm:px-2 text-center tabular-nums align-top">
+      <input name="weighted_mark" type="number" step="0.01" class="input input-bordered input-xs w-12 px-1 text-center tabular-nums" value="${safeMark}" required />
     </td>
-    <td class="assignment-raw" style="width:70px;">
-      <input name="unweighted_mark" type="number" step="0.01" class="input input-xs w-16 text-right" value="${row.dataset.unweightedMark || ''}" readonly tabindex="-1" style="background:#f3f3f3;" />
+    <td class="assignment-raw hidden sm:table-cell px-1.5 sm:px-2 text-center tabular-nums align-top">
+      <input name="unweighted_mark" type="number" step="0.01" class="input input-xs w-12 px-1 text-center tabular-nums" value="${row.dataset.unweightedMark || ''}" readonly tabindex="-1" style="background:#f3f3f3;" />
     </td>
-    <td class="assignment-weight" style="width:70px;">
-      <input name="mark_weight" type="number" step="0.01" min="0" max="100" class="input input-xs w-16 text-right" value="${safeWeight}" required />
+    <td class="assignment-weight px-2 text-center tabular-nums align-top">
+      <input name="mark_weight" type="number" step="0.01" min="0" max="100" class="input input-bordered input-xs w-12 px-1 text-center tabular-nums" value="${safeWeight}" required />
     </td>
-    <td class="assignment-type" style="width:60px;">
+    <td class="assignment-type hidden md:table-cell text-center align-top">
       <span class="inline-block w-12 text-center font-semibold">${row.dataset.gradeType || ''}</span>
     </td>
-    <td class="flex gap-1">
-      <button type="button" class="btn btn-xs btn-success" onclick="submitInlineEditAssignmentRow('${assessment}', '${window.subjectCode}', '${window.subjectSemester}', '${window.subjectYear}')">Save</button>
-      <button type="button" class="btn btn-xs" onclick="cancelInlineEditAssignment()">Cancel</button>
+    <td class="w-px whitespace-nowrap pl-2 pr-2 text-right align-top">
+      <div class="flex items-center justify-end gap-1">
+        <button type="button" class="btn btn-xs btn-success p-1 min-h-0 h-7 w-7 sm:w-auto sm:px-2" title="Save" onclick="submitInlineEditAssignmentRow('${assessment}', '${window.subjectCode}', '${window.subjectSemester}', '${window.subjectYear}')"><span class="sm:hidden">✓</span><span class="hidden sm:inline">Save</span></button>
+        <button type="button" class="btn btn-xs p-1 min-h-0 h-7 w-7 sm:w-auto sm:px-2" title="Cancel" onclick="cancelInlineEditAssignment()"><span class="sm:hidden">✕</span><span class="hidden sm:inline">Cancel</span></button>
+      </div>
     </td>
   `;
 }

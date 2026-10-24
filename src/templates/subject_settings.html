@@ -8,12 +8,12 @@
 
 {% block content %}
 <div class="flex flex-col gap-6">
-  <div class="flex items-start justify-between gap-4">
-    <div>
+  <div class="flex flex-wrap items-start justify-between gap-2">
+    <div class="min-w-0 flex-1">
       <h1 class="site-title">{{ subject.subject_code }} Settings</h1>
       <p class="text-sm opacity-70 mt-1">{{ subject.subject_name }} - {{ semester }} {{ year }}</p>
     </div>
-    <a href="/year/{{ year }}/semester/{{ semester }}/subject/{{ subject.subject_code }}" class="btn btn-sm btn-outline">Back to Subject</a>
+    <a href="/year/{{ year }}/semester/{{ semester }}/subject/{{ subject.subject_code }}" class="btn btn-sm btn-outline shrink-0">Back to Subject</a>
   </div>
 
   {% if request.query_params.get('error') %}
@@ -23,7 +23,7 @@
   {% endif %}
 
   <div class="grid gap-6 xl:grid-cols-2">
-    <section class="rounded-2xl border border-base-300 bg-base-100 shadow-lg p-5 md:p-6">
+    <section class="min-w-0 w-full rounded-2xl border border-base-300 bg-base-100 shadow-lg p-4 sm:p-5 md:p-6">
       <div class="flex items-center justify-between gap-3 mb-4">
         <div>
           <h2 class="text-lg font-semibold">Subject Details</h2>
@@ -34,31 +34,31 @@
         <input type="hidden" name="old_semester" value="{{ semester }}" />
         <input type="hidden" name="old_year" value="{{ year }}" />
         <input type="hidden" name="old_subject_code" value="{{ subject.subject_code }}" />
-        <table class="table table-sm w-full">
-          <tbody>
-            <tr>
-              <th class="w-40">Subject Code</th>
-              <td><input name="subject_code" class="input input-bordered input-sm w-full" value="{{ subject.subject_code }}" required /></td>
+        <table class="table table-sm block md:table w-full">
+          <tbody class="block md:table-row-group w-full">
+            <tr class="block md:table-row mb-2 md:mb-0">
+              <th class="block w-full md:w-40 md:table-cell pb-1 md:pb-2 text-left">Subject Code</th>
+              <td class="block w-full md:table-cell pt-0 md:pt-2"><input name="subject_code" class="input input-bordered input-sm w-full" value="{{ subject.subject_code }}" required /></td>
             </tr>
-            <tr>
-              <th>Subject Name</th>
-              <td><input name="subject_name" class="input input-bordered input-sm w-full" value="{{ subject.subject_name }}" required /></td>
+            <tr class="block md:table-row mb-2 md:mb-0">
+              <th class="block w-full md:w-40 md:table-cell pb-1 md:pb-2 text-left">Subject Name</th>
+              <td class="block w-full md:table-cell pt-0 md:pt-2"><input name="subject_name" class="input input-bordered input-sm w-full" value="{{ subject.subject_name }}" required /></td>
             </tr>
-            <tr>
-              <th>Credit Points</th>
-              <td><input name="credit_points" type="number" min="0" class="input input-bordered input-sm w-full" value="{{ subject.credit_points }}" required /></td>
+            <tr class="block md:table-row mb-2 md:mb-0">
+              <th class="block w-full md:w-40 md:table-cell pb-1 md:pb-2 text-left">Credit Points</th>
+              <td class="block w-full md:table-cell pt-0 md:pt-2"><input name="credit_points" type="number" min="0" class="input input-bordered input-sm w-full" value="{{ subject.credit_points }}" required /></td>
             </tr>
-            <tr>
-              <th>Target Semester</th>
-              <td><input name="target_semester" class="input input-bordered input-sm w-full" value="{{ semester }}" required /></td>
+            <tr class="block md:table-row mb-2 md:mb-0">
+              <th class="block w-full md:w-40 md:table-cell pb-1 md:pb-2 text-left">Target Semester</th>
+              <td class="block w-full md:table-cell pt-0 md:pt-2"><input name="target_semester" class="input input-bordered input-sm w-full" value="{{ semester }}" required /></td>
             </tr>
-            <tr>
-              <th>Target Year</th>
-              <td><input name="target_year" type="number" min="2000" max="2100" class="input input-bordered input-sm w-full" value="{{ year }}" required /></td>
+            <tr class="block md:table-row mb-2 md:mb-0">
+              <th class="block w-full md:w-40 md:table-cell pb-1 md:pb-2 text-left">Target Year</th>
+              <td class="block w-full md:table-cell pt-0 md:pt-2"><input name="target_year" type="number" min="2000" max="2100" class="input input-bordered input-sm w-full" value="{{ year }}" required /></td>
             </tr>
-            <tr>
-              <th>Flags</th>
-              <td class="space-y-2">
+            <tr class="block md:table-row">
+              <th class="block w-full md:w-40 md:table-cell pb-1 md:pb-2 text-left">Flags</th>
+              <td class="block w-full md:table-cell pt-0 md:pt-2 space-y-2">
                 <label class="flex items-center gap-2"><input type="checkbox" name="has_exam" value="true" {% if subject.has_exam %}checked{% endif %} class="checkbox checkbox-sm" /> <span>Has exam</span></label>
                 <label class="flex items-center gap-2"><input type="checkbox" name="sync_subject" value="true" {% if subject.sync_subject %}checked{% endif %} class="checkbox checkbox-sm" /> <span>Sync subject</span></label>
                 <label class="flex items-center gap-2"><input type="checkbox" name="force_move" value="true" class="checkbox checkbox-sm" /> <span>Allow move even if prerequisites are later</span></label>
@@ -66,16 +66,16 @@
             </tr>
           </tbody>
         </table>
-        <div class="flex justify-end gap-2">
+        <div class="flex flex-wrap justify-end gap-2">
           <a href="/year/{{ year }}/semester/{{ semester }}/subject/{{ subject.subject_code }}" class="btn btn-sm">Cancel</a>
           <button type="submit" class="btn btn-sm btn-primary">Save Subject</button>
         </div>
       </form>
     </section>
 
-    <section class="rounded-2xl border border-base-300 bg-base-100 shadow-lg p-5 md:p-6">
-      <div class="mt-8 grid gap-6 md:grid-cols-2">
-        <div class="bg-base-200 rounded-2xl p-5 border border-base-300">
+    <section class="min-w-0 w-full rounded-2xl border border-base-300 bg-base-100 shadow-lg p-4 sm:p-5 md:p-6">
+      <div class="mt-2 md:mt-4 grid gap-4 md:grid-cols-2 mb-4">
+        <div class="bg-base-200 rounded-2xl p-4 sm:p-5 border border-base-300">
           <h3 class="font-bold text-md mb-3 flex items-center gap-2">
             <span class="text-secondary">#</span> How Matching Works
           </h3>
@@ -95,7 +95,7 @@
           </ul>
         </div>
 
-        <div class="bg-base-200 rounded-2xl p-5 border border-base-300">
+        <div class="bg-base-200 rounded-2xl p-4 sm:p-5 border border-base-300">
           <h3 class="font-bold text-md mb-3">Common Examples</h3>
           <div class="space-y-2">
             <div class="bg-base-100 p-2 rounded-lg border border-base-300 flex justify-between items-center">
@@ -135,35 +135,35 @@
       </div>
       <form method="post" action="/semester/{{ semester }}/subject/{{ subject.subject_code }}/rules/update" class="space-y-4">
         <input type="hidden" name="year" value="{{ year }}" />
-        <div class="overflow-x-auto">
+        <div class="w-full overflow-x-auto">
           <table class="table table-sm w-full">
             <thead>
               <tr>
                 <th>Rule Label</th>
                 <th>Pattern</th>
-                <th class="w-24">Max Count</th>
-                <th class="w-28">Weight Each</th>
+                <th class="w-24 whitespace-nowrap">Max Count</th>
+                <th class="w-28 whitespace-nowrap">Weight Each</th>
               </tr>
             </thead>
             <tbody>
               {% for rule in subject_rules %}
               <tr>
-                <td><input name="rule_label" class="input input-bordered input-sm w-full" value="{{ rule.rule_label|e }}" placeholder="Rule label" /></td>
-                <td><input name="sql_pattern" class="input input-bordered input-sm w-full font-mono" value="{{ rule.sql_pattern|e }}" placeholder="%Assignment%" /></td>
-                <td><input name="max_count" type="number" min="0" class="input input-bordered input-sm w-full" value="{{ rule.max_count }}" /></td>
-                <td><input name="weight_each" type="number" step="0.01" min="0" class="input input-bordered input-sm w-full" value="{{ '%.2f'|format(rule.weight_each) }}" /></td>
+                <td><input name="rule_label" class="input input-bordered input-sm w-full min-w-[8rem]" value="{{ rule.rule_label|e }}" placeholder="Rule label" /></td>
+                <td><input name="sql_pattern" class="input input-bordered input-sm w-full min-w-[8rem] font-mono" value="{{ rule.sql_pattern|e }}" placeholder="%Assignment%" /></td>
+                <td><input name="max_count" type="number" min="0" class="input input-bordered input-sm w-full min-w-[4rem] tabular-nums" value="{{ rule.max_count }}" /></td>
+                <td><input name="weight_each" type="number" step="0.01" min="0" class="input input-bordered input-sm w-full min-w-[4.5rem] tabular-nums" value="{{ '%.2f'|format(rule.weight_each) }}" /></td>
               </tr>
               {% endfor %}
               <tr class="opacity-80">
-                <td><input name="rule_label" class="input input-bordered input-sm w-full" placeholder="Add new rule label" /></td>
-                <td><input name="sql_pattern" class="input input-bordered input-sm w-full font-mono" placeholder="%Assignment%" /></td>
-                <td><input name="max_count" type="number" min="0" class="input input-bordered input-sm w-full" placeholder="9" /></td>
-                <td><input name="weight_each" type="number" step="0.01" min="0" class="input input-bordered input-sm w-full" placeholder="2.00" /></td>
+                <td><input name="rule_label" class="input input-bordered input-sm w-full min-w-[8rem]" placeholder="Add new rule label" /></td>
+                <td><input name="sql_pattern" class="input input-bordered input-sm w-full min-w-[8rem] font-mono" placeholder="%Assignment%" /></td>
+                <td><input name="max_count" type="number" min="0" class="input input-bordered input-sm w-full min-w-[4rem] tabular-nums" placeholder="9" /></td>
+                <td><input name="weight_each" type="number" step="0.01" min="0" class="input input-bordered input-sm w-full min-w-[4.5rem] tabular-nums" placeholder="2.00" /></td>
               </tr>
             </tbody>
           </table>
         </div>
-        <div class="flex justify-end gap-2">
+        <div class="flex flex-wrap justify-end gap-2">
           <a href="/year/{{ year }}/semester/{{ semester }}/subject/{{ subject.subject_code }}" class="btn btn-sm">Cancel</a>
           <button type="submit" class="btn btn-sm btn-secondary">Save Rules</button>
         </div>
@@ -171,7 +171,7 @@
     </section>
   </div>
 
-  <section class="rounded-2xl border border-base-300 bg-base-100 shadow-lg p-5 md:p-6">
+  <section class="min-w-0 w-full rounded-2xl border border-base-300 bg-base-100 shadow-lg p-4 sm:p-5 md:p-6">
     <div class="flex items-center justify-between gap-3 mb-4">
       <div>
         <h2 class="text-lg font-semibold">Current Rule Summary</h2>
@@ -179,29 +179,29 @@
       </div>
     </div>
     {% if subject_rule_summary and subject_rule_summary|length > 0 %}
-    <div class="overflow-x-auto">
+    <div class="w-full overflow-x-auto">
       <table class="table table-sm w-full">
         <thead>
           <tr>
             <th>Rule Label</th>
             <th>Pattern</th>
-            <th>Max Count</th>
-            <th>Weight Each</th>
-            <th>Core Count</th>
-            <th>Bonus Count</th>
-            <th>Weighted Score</th>
+            <th class="whitespace-nowrap">Max Count</th>
+            <th class="whitespace-nowrap">Weight Each</th>
+            <th class="whitespace-nowrap">Core Count</th>
+            <th class="whitespace-nowrap">Bonus Count</th>
+            <th class="whitespace-nowrap">Weighted Score</th>
           </tr>
         </thead>
         <tbody>
           {% for rule in subject_rule_summary %}
           <tr>
             <td class="font-semibold">{{ rule.rule_label }}</td>
-            <td class="font-mono">{{ rule.sql_pattern }}</td>
-            <td>{{ rule.max_count }}</td>
-            <td>{{ '%.2f'|format(rule.weight_each) }}</td>
-            <td>{{ rule.core_count }}</td>
-            <td>{{ rule.bonus_count }}</td>
-            <td class="font-mono">{{ '%.2f'|format(rule.weighted_score) }}</td>
+            <td class="font-mono whitespace-nowrap">{{ rule.sql_pattern }}</td>
+            <td class="tabular-nums">{{ rule.max_count }}</td>
+            <td class="tabular-nums">{{ '%.2f'|format(rule.weight_each) }}</td>
+            <td class="tabular-nums">{{ rule.core_count }}</td>
+            <td class="tabular-nums">{{ rule.bonus_count }}</td>
+            <td class="font-mono tabular-nums">{{ '%.2f'|format(rule.weighted_score) }}</td>
           </tr>
           {% endfor %}
         </tbody>

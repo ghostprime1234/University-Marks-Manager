@@ -3,11 +3,14 @@
 {% set breadcrumbs = [{'label': 'Profile', 'url': None}] %}
 
 {% block content %}
-<div class="flex flex-col gap-6 max-w-4xl mx-auto pb-12">
-  <div class="flex justify-between items-center">
-    <h2 class="text-3xl font-bold">User Profile</h2>
-    <div class="badge badge-outline gap-2 p-4">
-      <span class="w-2 h-2 rounded-full bg-success"></span> Supabase Auth (GoTrue)
+<div class="flex flex-col gap-6 max-w-4xl mx-auto pb-12 w-full">
+  <div class="flex flex-wrap justify-between items-center gap-2">
+    <h2 class="text-2xl sm:text-3xl font-bold">User Profile</h2>
+    <div class="flex flex-wrap items-center gap-2">
+      <a href="/settings" hx-boost="false" class="btn btn-outline btn-xs sm:btn-sm gap-1">⚙️ Grade &amp; Scale Settings</a>
+      <div class="badge badge-outline gap-2 p-3 sm:p-4 text-xs sm:text-sm">
+        <span class="w-2 h-2 rounded-full bg-success"></span> Supabase Auth (GoTrue)
+      </div>
     </div>
   </div>
 
@@ -26,74 +29,89 @@
   <!-- Account & Security -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
     <div class="card bg-base-100 shadow-xl border border-base-200">
-      <div class="card-body">
+      <div class="card-body p-4 sm:p-6">
         <h3 class="card-title text-primary">Account Details</h3>
-        <div class="space-y-2">
+        <div class="space-y-2 break-words">
           <p><span class="opacity-60 text-sm">Username:</span><br><strong>{{ user.username }}</strong></p>
           <p><span class="opacity-60 text-sm">Email:</span><br><strong>{{ user.email }}</strong></p>
-          <p><span class="opacity-60 text-sm">User ID (UUID):</span><br><code class="text-xs opacity-75 font-mono">{{ user.id }}</code></p>
+          <p><span class="opacity-60 text-sm">User ID (UUID):</span><br><code class="text-xs opacity-75 font-mono break-words">{{ user.id }}</code></p>
         </div>
       </div>
     </div>
 
     <div class="card bg-base-100 shadow-xl border border-base-200">
-      <div class="card-body">
+      <div class="card-body p-4 sm:p-6">
         <h3 class="card-title text-secondary text-sm uppercase tracking-widest">Authentication & Security</h3>
         <p class="text-sm opacity-70">Credentials and sessions are managed securely via Supabase Auth (GoTrue). Password reset instructions can be dispatched directly to your email.</p>
         <div class="card-actions justify-end mt-4">
-          <button type="button" id="supabase-reset-pw-btn" class="btn btn-outline btn-sm">Send Password Reset Email</button>
+          <button type="button" id="supabase-reset-pw-btn" class="btn btn-outline btn-sm w-full sm:w-auto">Send Password Reset Email</button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- My Courses Table -->
-  <div class="card bg-base-100 shadow-xl overflow-hidden border border-base-200">
-    <div class="card-body p-0">
-      <div class="p-6 pb-0 flex justify-between items-center">
+  <div class="card bg-base-100 shadow-xl overflow-hidden border border-base-200 w-full min-w-0">
+    <div class="card-body p-0 min-w-0 w-full">
+      <div class="p-4 sm:p-6 pb-0 flex flex-wrap justify-between items-center gap-2">
         <h3 class="card-title">Enrolled Courses</h3>
         <span class="badge badge-neutral">{{ courses|length }} total</span>
       </div>
       
       {% if courses %}
-      <div class="overflow-x-auto mt-4">
-        <table class="table w-full">
+      <div class="w-full overflow-x-auto mt-4">
+        <table class="table table-fixed table-sm sm:table-md w-full max-w-full">
           <thead>
             <tr class="bg-base-200">
-              <th>Course</th>
-              <th>University</th>
-              <th class="text-center">Default</th>
-              <th class="text-right">GPA Scale / Action</th>
+              <th class="pl-3 pr-1 sm:px-4">Course</th>
+              <th class="hidden sm:table-cell sm:w-40">University</th>
+              <th class="hidden sm:table-cell sm:w-28 text-center">Default</th>
+              <th class="w-40 sm:w-52 whitespace-nowrap text-right pr-2 sm:px-4">
+                <span class="sm:hidden">Scale / Edit</span>
+                <span class="hidden sm:inline">GPA Scale / Action</span>
+              </th>
             </tr>
           </thead>
           <tbody>
             {% for item in courses %}
             <tr class="hover">
-              <td>
-                <div class="font-bold">{{ item.course.name }}</div>
-                <div class="text-xs opacity-50">{{ item.course.code }}</div>
+              <td class="pl-3 pr-1 sm:px-4 min-w-0 whitespace-normal break-words align-top">
+                <div class="break-words leading-snug">
+                  <a href="/courses/{{ item.course.code }}" class="font-semibold text-primary hover:underline">{{ item.course.name }}</a>
+                </div>
+                <div class="flex flex-wrap items-center gap-1.5 mt-0.5">
+                  <span class="text-xs opacity-50">{{ item.course.code }}</span>
+                  {% if item.is_default %}
+                    <span class="sm:hidden badge badge-success badge-xs text-[10px] font-medium gap-0.5">Default</span>
+                  {% else %}
+                    <form method="post" action="/profile/set-default/{{ item.id }}" class="sm:hidden inline">
+                      <button type="submit" class="link link-primary text-[11px] font-medium">Set Default</button>
+                    </form>
+                  {% endif %}
+                </div>
+                <div class="text-[11px] opacity-60 sm:hidden mt-0.5 break-words">{{ item.course.university.name if item.course.university else 'Private/Independent' }}</div>
               </td>
-              <td>{{ item.course.university.name if item.course.university else 'Private/Independent' }}</td>
-              <td class="text-center">
+              <td class="hidden sm:table-cell whitespace-normal break-words">{{ item.course.university.name if item.course.university else 'Private/Independent' }}</td>
+              <td class="hidden sm:table-cell text-center whitespace-nowrap">
                 {% if item.is_default %}
-                  <div class="badge badge-success gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-4 h-4 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                  <div class="badge badge-success badge-sm sm:badge-md gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                     Default
                   </div>
                 {% else %}
                   <form method="post" action="/profile/set-default/{{ item.id }}">
-                    <button type="submit" class="btn btn-ghost btn-xs text-primary underline">Make Default</button>
+                    <button type="submit" class="btn btn-ghost btn-xs text-primary underline px-1">Make Default</button>
                   </form>
                 {% endif %}
               </td>
-              <td class="text-right">
-                <div class="flex items-center justify-end gap-2">
+              <td class="w-40 sm:w-52 whitespace-nowrap text-right pr-2 sm:px-4 align-middle">
+                <div class="flex items-center gap-1 sm:gap-1.5 justify-end">
                   {# GPA scale selector — posts via HTMX on change, redirects back to /profile #}
                   <select
                     name="gpa_scale"
                     title="GPA point scale"
-                    class="select select-xs select-bordered w-36"
-                    hx-post="/courses/{{ item.course.code or item.course.id }}/settings/update"
+                    class="select select-xs select-bordered w-24 sm:w-32 px-1.5 text-xs"
+                    hx-post="/courses/{{ item.course.code }}/settings/update"
                     hx-trigger="change"
                     hx-vals='{"return_to": "/profile"}'
                     hx-swap="none">
@@ -107,10 +125,12 @@
                     </option>
                     {% endfor %}
                   </select>
+                  {# Course settings button #}
+                  <a href="/courses/{{ item.course.code }}" class="btn btn-ghost btn-xs btn-circle text-base-content/70 hover:text-primary shrink-0" title="Course Settings" aria-label="Course Settings">⚙️</a>
                   {# Remove course button #}
-                  <form method="post" action="/profile/remove-course/{{ item.id }}" onsubmit="return confirm('Archive this course mapping? Data remains safe but won\'t appear in your dashboard.');">
-                    <button type="submit" class="btn btn-square btn-ghost btn-sm text-error" title="Remove course">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  <form method="post" action="/profile/remove-course/{{ item.id }}" class="shrink-0" onsubmit="return confirm('Archive this course mapping? Data remains safe but won\'t appear in your dashboard.');">
+                    <button type="submit" class="btn btn-square btn-ghost btn-xs sm:btn-sm text-error" title="Remove course" aria-label="Remove course">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     </button>
                   </form>
                 </div>
@@ -131,15 +151,15 @@
 
  <!-- Add / Create Course -->
   <div class="card bg-base-100 shadow-xl">
-    <div class="card-body">
+    <div class="card-body p-4 sm:p-6">
       <h3 class="card-title">Add Course</h3>
       {% if available_courses %}
-      <form method="post" action="/profile/add-course" class="flex flex-col gap-4">
-        <div class="form-control">
+      <form method="post" action="/profile/add-course" class="flex flex-col sm:flex-row gap-2 items-stretch sm:items-end w-full">
+        <div class="form-control w-full sm:w-auto sm:flex-1">
           <label class="label">
             <span class="label-text">Select a course to add:</span>
           </label>
-          <select name="course_id" class="select select-bordered" required>
+          <select name="course_id" class="select select-bordered w-full sm:w-auto" required>
             <option value="" disabled selected>Choose a course</option>
             {% for course in available_courses %}
             <option value="{{ course.id }}">
@@ -149,15 +169,15 @@
             {% endfor %}
           </select>
         </div>
-          <button type="submit" class="btn btn-primary">Join Course</button>
+        <button type="submit" class="btn btn-primary w-full sm:w-auto">Join Course</button>
       </form>
       {% else %}
       <p class="opacity-70">All available courses have been added to your account.</p>
 
       <div class="mt-6 border-t border-base-300 pt-4">
         <h4 class="font-semibold mb-3">Create New Course</h4>
-        <div class="space-y-4">
-          <a href="/courses/create" class="btn btn-secondary w-full">+ Define New Program</a>
+        <div class="flex flex-wrap gap-2 w-full">
+          <a href="/courses/create" class="btn btn-secondary w-full sm:w-auto">+ Define New Program</a>
         </div>
       </div>
       {% endif %}
@@ -166,7 +186,7 @@
 
   <!-- Data Management -->
   <div class="card bg-base-100 shadow-xl">
-    <div class="card-body">
+    <div class="card-body p-4 sm:p-6">
       <h3 class="card-title">Data Management</h3>
       <p class="text-sm opacity-70 mb-4">Export all of your subjects, assignments, and grades to a JSON file to keep your local app in sync, or import a JSON file to update your data.</p>
       
@@ -184,7 +204,7 @@
           <h4 class="font-semibold mb-2">Import Data</h4>
           <form id="import-form" class="flex flex-col gap-2">
             <input type="file" id="import-file" accept=".json" class="file-input file-input-bordered file-input-sm w-full max-w-xs" />
-            <button type="button" onclick="handleImport('{{ user.id }}')" class="btn btn-secondary btn-sm w-fit">Import JSON</button>
+            <button type="button" onclick="handleImport('{{ user.id }}')" class="btn btn-secondary btn-sm w-full sm:w-auto">Import JSON</button>
             <p id="import-status" class="text-xs mt-1 hidden"></p>
           </form>
         </div>
@@ -194,8 +214,11 @@
 
   <!-- GPA Scale Management -->
   <div class="card bg-base-100 shadow-xl border border-base-200">
-    <div class="card-body">
-      <h3 class="card-title">GPA Scale Management</h3>
+    <div class="card-body p-4 sm:p-6">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+        <h3 class="card-title">GPA Scale Management</h3>
+        <a href="/settings" hx-boost="false" class="btn btn-outline btn-xs sm:btn-sm gap-1">⚙️ Grade &amp; Scale Settings</a>
+      </div>
       <p class="text-sm opacity-70 mb-4">
         Build up a custom GPA scale one grade band at a time. Once all bands are added,
         assign the scale to a course using the <strong>GPA Scale</strong> selector in the
@@ -204,13 +227,13 @@
       </p>
 
       <form method="post" action="/settings/grade-scales/add"
-            class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 items-end">
+            class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
 
-        <div class="form-control col-span-2 sm:col-span-3 lg:col-span-2">
+        <div class="form-control col-span-1 sm:col-span-2 lg:col-span-2">
           <label class="label py-1">
             <span class="label-text text-xs font-semibold uppercase opacity-60">Scale Name</span>
           </label>
-          <input name="scale_name" class="input input-bordered input-sm"
+          <input name="scale_name" class="input input-bordered input-sm w-full"
                  placeholder="e.g. 5-Point Custom"
                  list="existing-scale-names" required />
           <datalist id="existing-scale-names">
@@ -220,51 +243,51 @@
           </datalist>
         </div>
 
-        <div class="form-control">
+        <div class="form-control col-span-1">
           <label class="label py-1">
             <span class="label-text text-xs font-semibold uppercase opacity-60">Grade</span>
           </label>
-          <input name="grade" class="input input-bordered input-sm"
+          <input name="grade" class="input input-bordered input-sm w-full"
                  placeholder="HD" maxlength="4" required />
         </div>
 
-        <div class="form-control col-span-2 sm:col-span-1">
+        <div class="form-control col-span-1">
           <label class="label py-1">
             <span class="label-text text-xs font-semibold uppercase opacity-60">Label</span>
           </label>
-          <input name="label" class="input input-bordered input-sm"
+          <input name="label" class="input input-bordered input-sm w-full"
                  placeholder="High Distinction" required />
         </div>
 
-        <div class="form-control">
+        <div class="form-control col-span-1">
           <label class="label py-1">
             <span class="label-text text-xs font-semibold uppercase opacity-60">Min Mark&nbsp;(%)</span>
           </label>
           <input name="min_mark" type="number" step="0.01" min="0" max="100"
-                 class="input input-bordered input-sm" placeholder="85" required />
+                 class="input input-bordered input-sm w-full tabular-nums" placeholder="85" required />
         </div>
 
-        <div class="form-control">
+        <div class="form-control col-span-1">
           <label class="label py-1">
             <span class="label-text text-xs font-semibold uppercase opacity-60">GPA Points</span>
           </label>
           <input name="gpa_point" type="number" step="0.01" min="0"
-                 class="input input-bordered input-sm" placeholder="5" required />
+                 class="input input-bordered input-sm w-full tabular-nums" placeholder="5" required />
         </div>
 
-        <div class="form-control">
+        <div class="form-control col-span-1">
           <label class="label py-1">
             <span class="label-text text-xs font-semibold uppercase opacity-60">Band Type</span>
           </label>
-          <select name="band_type" class="select select-bordered select-sm">
+          <select name="band_type" class="select select-bordered select-sm w-full">
             <option value="both" selected>Both</option>
             <option value="wam">WAM only</option>
             <option value="gpa">GPA only</option>
           </select>
         </div>
 
-        <div class="col-span-2 sm:col-span-3 lg:col-span-6 flex justify-end">
-          <button type="submit" class="btn btn-primary btn-sm">Add Grade Band</button>
+        <div class="col-span-1 sm:col-span-2 lg:col-span-6 flex justify-end">
+          <button type="submit" class="btn btn-primary btn-sm w-full sm:w-auto">Add Grade Band</button>
         </div>
       </form>
 

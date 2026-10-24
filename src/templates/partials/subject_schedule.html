@@ -6,27 +6,27 @@
 {% endfor %}
 
 <section class="max-w-4xl mx-auto px-2 w-full flex flex-col gap-3">
-  <div class="flex items-center justify-between gap-3 flex-wrap">
+  <div class="flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
     <h3 class="text-lg sm:text-xl font-bold">Subject Schedule</h3>
     {% if ns.has_subjects %}
-      <div class="btn-group">
-        <button id="sched-btn-table" class="btn btn-sm btn-outline btn-active" onclick="setScheduleView('table')">Table View</button>
-        <button id="sched-btn-grid" class="btn btn-sm btn-outline" onclick="setScheduleView('grid')">Grid View</button>
+      <div class="btn-group flex flex-wrap gap-1 sm:gap-0">
+        <button id="sched-btn-table" class="btn btn-xs sm:btn-sm btn-outline btn-active" onclick="setScheduleView('table')">Table View</button>
+        <button id="sched-btn-grid" class="btn btn-xs sm:btn-sm btn-outline" onclick="setScheduleView('grid')">Grid View</button>
       </div>
     {% endif %}
   </div>
 
   {% if ns.has_subjects %}
     <!-- TABLE VIEW -->
-    <div id="schedule-table" class="overflow-x-auto rounded-xl bg-base-100 shadow" style="scroll-margin-top: 82px;">
+    <div id="schedule-table" class="w-full overflow-x-auto rounded-xl bg-base-100 shadow" style="scroll-margin-top: 82px;">
       <table class="table table-zebra table-sm sm:table-md w-full">
         <thead>
           <tr>
-            <th>Subject Code</th>
+            <th class="whitespace-nowrap">Subject Code</th>
             <th>Subject Name</th>
-            <th>Semester</th>
-            <th>Year</th>
-            <th class="text-right">Credit Points</th>
+            <th class="hidden sm:table-cell">Semester</th>
+            <th class="hidden sm:table-cell">Year</th>
+            <th class="text-right whitespace-nowrap">Credit Points</th>
           </tr>
         </thead>
         <tbody>
@@ -35,15 +35,21 @@
             {% if subs %}
               {% for s in subs %}
                 <tr class="hover">
-                  <td class="font-mono text-xs sm:text-sm">
+                  <td class="font-mono text-xs sm:text-sm whitespace-nowrap">
                     <a class="link link-primary" href="/year/{{ sem.year }}/semester/{{ sem.name }}/subject/{{ s.subject_code }}">
                       {{ s.subject_code }}
                     </a>
                   </td>
-                  <td class="text-sm">{{ s.subject_name }}</td>
-                  <td><span class="badge badge-ghost badge-sm">{{ sem.name }}</span></td>
-                  <td class="tabular-nums text-sm">{{ sem.year }}</td>
-                  <td class="text-right tabular-nums text-sm">{{ s.credit_points }}</td>
+                  <td class="text-sm">
+                    <div>{{ s.subject_name }}</div>
+                    <div class="sm:hidden flex items-center gap-1.5 mt-0.5 text-xs opacity-70">
+                      <span class="badge badge-ghost badge-xs">{{ sem.name }}</span>
+                      <span class="tabular-nums">{{ sem.year }}</span>
+                    </div>
+                  </td>
+                  <td class="hidden sm:table-cell whitespace-nowrap"><span class="badge badge-ghost badge-sm">{{ sem.name }}</span></td>
+                  <td class="hidden sm:table-cell tabular-nums text-sm whitespace-nowrap">{{ sem.year }}</td>
+                  <td class="text-right tabular-nums text-sm whitespace-nowrap">{{ s.credit_points }}</td>
                 </tr>
               {% endfor %}
             {% endif %}

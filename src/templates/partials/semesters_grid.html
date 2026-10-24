@@ -13,7 +13,7 @@
       <button class="btn btn-ghost btn-xs sm:btn-sm ml-2 sm:ml-3 shrink-0" onclick="document.getElementById('edit-semester-modal-{{semester.id}}').showModal();" title="Edit Semester">⚙️</button>
         <!-- Edit Semester Modal -->
         <dialog id="edit-semester-modal-{{semester.id}}" class="modal">
-          <form method="post" action="/semester/{{semester.name}}/edit" class="modal-box flex flex-col gap-4 w-96">
+          <form method="post" action="/semester/{{semester.name}}/edit" class="modal-box flex flex-col gap-4 w-11/12 max-w-sm sm:max-w-md mx-auto">
             <h3 class="font-bold text-lg mb-2">Edit Semester</h3>
             <label class="form-control">
               <span class="label-text">Semester Name</span>
@@ -24,7 +24,7 @@
               <input name="new_year" class="input input-bordered w-full" type="number" min="2000" max="2100" value="{{semester.year}}" required />
             </label>
             <input type="hidden" name="old_year" value="{{semester.year}}" />
-            <div class="modal-action flex gap-2 justify-end">
+            <div class="modal-action flex flex-wrap gap-2 justify-end">
               <button type="button" class="btn btn-outline" onclick="document.getElementById('edit-semester-modal-{{semester.id}}').close()">Cancel</button>
               <button type="submit" class="btn btn-primary">Save</button>
             </div>

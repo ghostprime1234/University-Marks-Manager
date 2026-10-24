@@ -142,11 +142,21 @@ async def get_current_user_token(
     else:
         token = extract_token_from_request(request)
 
+    has_explicit_auth_header = bool(
+        (isinstance(credentials, HTTPAuthorizationCredentials) and credentials.credentials)
+        or request.headers.get("Authorization")
+        or request.headers.get("authorization")
+    )
+
     if token:
-        payload = verify_supabase_token(token)
-        request.state.user = payload
-        request.state.user_id = ensure_uuid(payload["sub"])
-        return payload
+        try:
+            payload = verify_supabase_token(token)
+            request.state.user = payload
+            request.state.user_id = ensure_uuid(payload["sub"])
+            return payload
+        except HTTPException:
+            if has_explicit_auth_header:
+                raise
 
     # Fallback for server-rendered web sessions when request.session has user_id
     if hasattr(request, "session") and request.session.get("user_id"):

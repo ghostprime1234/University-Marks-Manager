@@ -83,50 +83,62 @@
   overflow: hidden;
 }
 
-/* ── Narrow screens: switch to flex-wrap, three rows ── */
-/* Row 1: title                                                   */
-/* Row 2: course selector (full width) + user icon               */
-/* Row 3: breadcrumbs (full width)                               */
-@media (max-width: 767px) {
+/* ── Narrow screens (<= 768px): compact 2-row header layout ── */
+/* Row 1: title on left, avatar icon on far right (justify-between) */
+/* Row 2: course selector dropdown full width centered below        */
+/* Breadcrumbs: full width below                                    */
+@media (max-width: 768px) {
   .site-header {
     display: flex;
     flex-wrap: wrap;
-    padding: 0.5rem 0.75rem;
-    min-height: auto;
-    gap: 0.35rem 0.5rem;
-    align-items: flex-start;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    min-height: 0;
+    height: auto;
+    gap: 0.5rem;
   }
   .site-header-left {
-    flex: 1 1 100%;
+    flex: 1 1 0%;
+    min-width: 0;
     order: 1;
   }
   .site-header-active-course {
     display: none;
   }
-  /* Row 2: course selector grows to fill, user icon at end */
   .site-header-right {
-    flex: 1 1 100%;
+    display: contents;
+  }
+  .site-header-right > .dropdown {
+    flex: 0 0 auto;
     order: 2;
-    justify-content: flex-start;
+    margin-left: auto;
   }
   #course-header-container {
-    flex: 1 1 auto;
+    flex: 1 1 100%;
+    width: 100%;
+    order: 3;
+    margin-inline: auto;
+  }
+  #course-header-container:empty {
+    display: none;
   }
   #course-header-container .select {
     width: 100%;
     max-width: 100%;
   }
-  /* Row 3: breadcrumbs full width */
+  /* Breadcrumbs full width */
   .site-header [aria-label="Breadcrumb"] {
     flex: 1 1 100%;
-    order: 3;
+    width: 100%;
+    order: 4;
     justify-content: flex-start;
   }
 }
 
 /* ── Main content offset below sticky header ── */
 #main { padding-top: 110px; }
-@media (max-width: 767px) { #main { padding-top: 140px; } }
+@media (max-width: 768px) { #main { padding-top: 1rem; } }
 
 
 /* ── Subject page: target-grade responsive grid ── */

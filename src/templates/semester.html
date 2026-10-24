@@ -7,7 +7,7 @@
 {% block content %}
 <!-- Edit Semester Modal -->
 <dialog id="edit-semester-modal" class="modal">
-  <form method="post" action="/semester/{{semester}}/edit" class="modal-box flex flex-col gap-4 w-96">
+  <form method="post" action="/semester/{{semester}}/edit" class="modal-box flex flex-col gap-4 w-11/12 max-w-sm sm:max-w-md mx-auto">
     <h3 class="font-bold text-lg mb-2">Edit Semester</h3>
     <label class="form-control">
       <span class="label-text">Semester Name</span>
@@ -18,7 +18,7 @@
       <input name="new_year" class="input input-bordered w-full" type="number" min="2000" max="2100" value="{{year}}" required />
     </label>
     <input type="hidden" name="old_year" value="{{year}}" />
-    <div class="modal-action flex gap-2 justify-end">
+    <div class="modal-action flex flex-wrap gap-2 justify-end">
       <button type="button" class="btn btn-outline" onclick="document.getElementById('edit-semester-modal').close()">Cancel</button>
       <button type="submit" class="btn btn-primary">Save</button>
     </div>
@@ -27,7 +27,7 @@
 <div class="flex flex-col items-center text-center gap-3 md:gap-4 mb-8">
   <h2 class="semester-title">{{semester}} <span class="semester-year">({{year}})</span></h2>
   <span class="badge badge-info badge-sm heading-badge">{{ subject_summaries|length }} {{ 'subject' if (subject_summaries|length) == 1 else 'subjects' }}</span>
-  <div class="flex gap-2">
+  <div class="flex flex-wrap justify-center gap-2">
     <a href="/year/{{year}}" class="btn btn-xs btn-outline">Back</a>
     <a href="/" class="btn btn-xs btn-secondary">Return to Home</a>
     <button class="btn btn-xs btn-accent" onclick="document.getElementById('edit-semester-modal').showModal()">Edit Semester</button>
@@ -86,27 +86,33 @@
         }
         window.toggleManage = toggleManage;
       </script>
-<div class="overflow-x-auto">
+<div class="w-full overflow-x-auto">
   <table class="table w-full">
     <thead class="text-sm opacity-70">
       <tr class="border-b border-base-300">
-        <th class="text-left p-4">Code</th>
-        <th class="text-left p-4" style="white-space:normal;word-break:break-word;min-width:10rem;">Name</th>
-        <th class="text-right p-4">Mark</th>
-        <th class="text-right p-4 hidden md:table-cell">Unweighted (%)</th>
-        <th class="text-right p-4 hidden md:table-cell">Weight</th>
-        <th class="text-right p-4 font-bold">Total</th>
-        <th class="text-right p-4"></th>
+        <th class="text-left p-2 sm:p-4 whitespace-nowrap">Code</th>
+        <th class="text-left p-2 sm:p-4">Name</th>
+        <th class="text-center tabular-nums p-2 sm:p-4 hidden sm:table-cell">Mark</th>
+        <th class="text-right p-2 sm:p-4 hidden md:table-cell">Unweighted (%)</th>
+        <th class="text-right p-2 sm:p-4 hidden md:table-cell">Weight</th>
+        <th class="text-center tabular-nums p-2 sm:p-4 font-bold hidden sm:table-cell">Total</th>
+        <th class="w-px whitespace-nowrap text-right p-2 sm:p-4"></th>
       </tr>
     </thead>
     <tbody>
       {% set open_code = request.query_params.get('open') %}
       {% for row in subject_summaries %}
       <tr class="hover:bg-base-200/50 border-b border-base-300/50">
-        <td class="p-4 font-mono">{{ row.code }}</td>
-        <td class="p-4" style="white-space:normal;word-break:break-word;min-width:10rem;">{{ row.name }}</td>
-        <td class="p-4 text-right">{{ '%.2f' % row.assessment_mark if row.assessment_mark is not none else '-' }}</td>
-        <td class="p-4 text-right hidden md:table-cell">
+        <td class="p-2 sm:p-4 font-mono text-xs sm:text-sm whitespace-nowrap">{{ row.code }}</td>
+        <td class="p-2 sm:p-4 text-xs sm:text-sm whitespace-normal">
+          <div>{{ row.name }}</div>
+          <div class="sm:hidden flex flex-wrap items-center gap-1.5 mt-1">
+            <span class="badge badge-ghost badge-sm text-[11px] font-medium tabular-nums">Mark: {{ '%.2f' % row.assessment_mark if row.assessment_mark is not none else '—' }}</span>
+            <span class="badge badge-outline badge-sm text-[11px] font-medium tabular-nums">Total: {{ '%.0f' % row.total_mark if row.total_mark is not none else '—' }}</span>
+          </div>
+        </td>
+        <td class="p-2 sm:p-4 text-center tabular-nums text-xs sm:text-sm hidden sm:table-cell">{{ '%.2f' % row.assessment_mark if row.assessment_mark is not none else '—' }}</td>
+        <td class="p-2 sm:p-4 text-right hidden md:table-cell">
           {% if row.assessment_weight is defined and row.assessment_weight is not none and row.assessment_weight != 0
                 and row.assessment_unweighted_contribution is defined and row.assessment_unweighted_contribution is not none %}
             {{ '%.2f' % ((row.assessment_unweighted_contribution / row.assessment_weight) * 100) }}%
@@ -114,57 +120,62 @@
             -
           {% endif %}
         </td>
-        <td class="p-4 text-right hidden md:table-cell">{{ '%.0f' % row.assessment_weight if row.assessment_weight is not none else '-' }}%</td>
-        <td class="p-4 text-right font-bold">{{ '%.0f' % row.total_mark if row.total_mark is not none else '-' }}</td>
-        <td class="p-4 text-right">
-          <a href="/year/{{year}}/semester/{{semester}}/subject/{{row.code}}" class="btn btn-xs btn-outline">Open</a>
-          <button class="btn btn-xs ml-1" type="button" onclick="this.closest('tr').nextElementSibling.classList.toggle('hidden')">Manage</button>
+        <td class="p-2 sm:p-4 text-right hidden md:table-cell">{{ '%.0f' % row.assessment_weight if row.assessment_weight is not none else '-' }}%</td>
+        <td class="p-2 sm:p-4 text-center tabular-nums font-bold text-xs sm:text-sm hidden sm:table-cell">{{ '%.0f' % row.total_mark if row.total_mark is not none else '—' }}</td>
+        <td class="w-px whitespace-nowrap text-right p-2 sm:p-4">
+          <div class="inline-flex items-center justify-end gap-1 sm:gap-1.5">
+            <a href="/year/{{year}}/semester/{{semester}}/subject/{{row.code}}" class="btn btn-xs sm:btn-sm btn-outline">Open</a>
+            <button class="btn btn-xs sm:btn-sm btn-square sm:w-auto sm:px-3" type="button" onclick="this.closest('tr').nextElementSibling.classList.toggle('hidden')" title="Manage Subject">
+              <span class="sm:hidden">⚙️</span>
+              <span class="hidden sm:inline">Manage</span>
+            </button>
+          </div>
         </td>
       </tr>
       <tr id="manage-{{ row.code }}-{{ loop.index }}" class="{% if open_code == row.code %} {% else %}hidden{% endif %}">
-        <td colspan="7" class="p-4 bg-base-100/60">
-          <div class="flex flex-wrap gap-2 items-start w-full">
-            <form method="post" class="flex flex-wrap gap-2 items-end flex-1 min-w-0" onsubmit="this.action = '/semester/' + encodeURIComponent(this.querySelector('[name=\'old_semester\']').value) + '/subject/' + encodeURIComponent(this.querySelector('[name=\'old_subject_code\']').value) + '/update';">
+        <td colspan="7" class="p-3 sm:p-4 bg-base-100/60">
+          <div class="flex flex-col sm:flex-row sm:flex-wrap gap-2 items-stretch sm:items-end w-full">
+            <form method="post" class="flex flex-col sm:flex-row sm:flex-wrap gap-2 items-stretch sm:items-end flex-1 min-w-0 w-full" onsubmit="this.action = '/semester/' + encodeURIComponent(this.querySelector('[name=\'old_semester\']').value) + '/subject/' + encodeURIComponent(this.querySelector('[name=\'old_subject_code\']').value) + '/update';">
               <input type="hidden" name="return_to" value="{{semester}}-{{year}}" />
               <input type="hidden" name="old_semester" value="{{semester}}" />
               <input type="hidden" name="old_year" value="{{year}}" />
               <input type="hidden" name="old_subject_code" value="{{ row.code }}" />
-              <label class="form-control w-28 shrink-0">
+              <label class="form-control w-full sm:w-28">
                 <span class="label-text text-xs">Code</span>
-                <input name="subject_code" value="{{ row.code }}" class="input input-bordered input-xs" required />
+                <input name="subject_code" value="{{ row.code }}" class="input input-bordered input-xs sm:input-sm w-full sm:w-auto" required />
               </label>
-              <label class="form-control flex-1 min-w-[12rem]">
+              <label class="form-control w-full sm:flex-1 sm:min-w-[10rem]">
                 <span class="label-text text-xs">Name</span>
-                <input name="subject_name" value="{{ row.name }}" class="input input-bordered input-xs w-full" required />
+                <input name="subject_name" value="{{ row.name }}" class="input input-bordered input-xs sm:input-sm w-full" required />
               </label>
-              <label class="form-control w-20 shrink-0">
+              <label class="form-control w-full sm:w-20">
                 <span class="label-text text-xs">CP</span>
-                <input type="number" name="credit_points" value="{{ row.credit_points if row.credit_points is not none else 6 }}" class="input input-bordered input-xs" />
+                <input type="number" name="credit_points" value="{{ row.credit_points if row.credit_points is not none else 6 }}" class="input input-bordered input-xs sm:input-sm w-full sm:w-auto" />
               </label>
-              <label class="form-control w-28 shrink-0">
+              <label class="form-control w-full sm:w-28">
                 <span class="label-text text-xs">Semester</span>
-                <input name="semester" value="{{semester}}" class="input input-bordered input-xs" required />
+                <input name="semester" value="{{semester}}" class="input input-bordered input-xs sm:input-sm w-full sm:w-auto" required />
               </label>
-              <label class="form-control w-20 shrink-0">
+              <label class="form-control w-full sm:w-24">
                 <span class="label-text text-xs">Year</span>
-                <input type="number" name="year" value="{{year}}" class="input input-bordered input-xs" min="2000" max="2100" required />
+                <input type="number" name="year" value="{{year}}" class="input input-bordered input-xs sm:input-sm w-full sm:w-auto" min="2000" max="2100" required />
               </label>
-              <div class="flex gap-6 items-center shrink-0">
-                <label class="flex flex-row items-center gap-2">
+              <div class="flex flex-wrap gap-4 sm:gap-6 items-center py-1">
+                <label class="flex flex-row items-center gap-2 cursor-pointer">
                   <input type="checkbox" name="has_exam" class="checkbox checkbox-xs" {% if row.has_exam %}checked{% endif %} />
                   <span class="label-text text-xs whitespace-nowrap">Has Exam</span>
                 </label>
-                <label class="flex flex-row items-center gap-2">
+                <label class="flex flex-row items-center gap-2 cursor-pointer">
                   <input type="checkbox" name="sync_subject" class="checkbox checkbox-xs" {% if row.sync_subject %}checked{% endif %} />
                   <span class="label-text text-xs whitespace-nowrap">Sync Subject</span>
                 </label>
               </div>
-              <button class="btn btn-xs btn-primary shrink-0" type="submit">Save</button>
+              <button class="btn btn-xs sm:btn-sm btn-primary w-full sm:w-auto" type="submit">Save</button>
             </form>
-            <form method="post" action="/semester/{{ row.semester_name }}/subject/{{ row.code }}/delete" onsubmit="return confirm('Delete {{ row.code }} and all its data?');" class="ml-auto shrink-0">
+            <form method="post" action="/semester/{{ row.semester_name }}/subject/{{ row.code }}/delete" onsubmit="return confirm('Delete {{ row.code }} and all its data?');" class="w-full sm:w-auto sm:ml-auto">
               <input type="hidden" name="year" value="{{year}}" />
               <input type="hidden" name="return_to" value="{{semester}}-{{year}}" />
-              <button class="btn btn-xs btn-error btn-outline" type="submit">Delete</button>
+              <button class="btn btn-xs sm:btn-sm btn-error btn-outline w-full sm:w-auto" type="submit">Delete</button>
             </form>
           </div>
         </td>

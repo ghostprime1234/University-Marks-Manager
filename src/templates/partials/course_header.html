@@ -3,8 +3,8 @@
           hx-post="/courses/select-inline" hx-target="#course-header-container" hx-swap="outerHTML" hx-trigger="change">
     <option value="" disabled {% if not current_course_id %}selected{% endif %}>Select course…</option>
     {% for c in courses %}
-      <option value="{{ c.code or c.id }}"
-              data-compact="{{ c.code or c.id }}"
+      <option value="{{ c.code }}"
+              data-compact="{{ c.code }}"
               {% if current_course_id and (c.id == current_course_id) %}selected{% endif %}>{{ c.name }}{% if c.code %} ({{ c.code }}){% endif %}</option>
     {% endfor %}
   </select>

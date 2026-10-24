@@ -3,30 +3,29 @@
 {% block title %}Settings - University Marks Manager{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto">
-  <div class="flex items-center justify-between mb-6">
-    <h2 class="text-3xl font-bold">Settings</h2>
-    <a href="/" class="btn btn-ghost">Back to Home</a>
+<div class="max-w-3xl mx-auto w-full">
+  <div class="flex flex-wrap items-center justify-between gap-2 mb-6">
+    <h2 class="text-2xl sm:text-3xl font-bold">Settings</h2>
+    <a href="/" class="btn btn-sm sm:btn-md btn-ghost">Back to Home</a>
   </div>
 
-  <div class="card bg-base-100 shadow-xl border border-base-200">
-    <div class="card-body">
+  <div class="card bg-base-100 shadow-xl border border-base-200 w-full">
+    <div class="card-body p-4 sm:p-6">
       <h3 class="card-title mb-4">Grade Scales</h3>
       
       {% if course %}
       <div class="alert alert-info mb-4 text-sm">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-        <div>
-          Editing configuration for active course: <strong>{{ course.name }}</strong>
-          <br>
-          <form action="/settings/scale/update" method="post" style="display:inline">
-            <label for="scale_name" class="mr-2">Current Scale:</label>
-            <select name="scale_name" id="scale_name" class="select select-sm select-bordered" onchange="this.form.submit()">
+        <div class="w-full">
+          <div>Editing configuration for active course: <strong>{{ course.name }}</strong></div>
+          <form action="/settings/scale/update" method="post" class="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full mt-2">
+            <label for="scale_name" class="font-medium">Current Scale:</label>
+            <select name="scale_name" id="scale_name" class="select select-sm select-bordered w-full sm:w-auto" onchange="this.form.submit()">
               {% for scale in all_scale_names %}
                 <option value="{{ scale }}" {% if scale == current_scale_name %}selected{% endif %}>{{ scale }}</option>
               {% endfor %}
             </select>
-            <noscript><button type="submit" class="btn btn-sm ml-2">Change</button></noscript>
+            <noscript><button type="submit" class="btn btn-sm">Change</button></noscript>
           </form>
         </div>
       </div>
@@ -47,45 +46,45 @@
 
       <div class="flex mb-4 justify-center">
         <div class="rounded-lg bg-base-200 p-1 flex w-fit border border-base-300 shadow-sm">
-          <a class="tab tab-lg font-semibold px-8 py-2 mx-1 transition-all duration-150 tab-active bg-primary text-primary-content rounded-md shadow-md border-2 border-primary cursor-pointer" id="wam-tab" onclick="showTab('wam')" style="margin-right: 0.5rem;" >WAM Bands</a>
-          <a class="tab tab-lg font-semibold px-8 py-2 mx-1 transition-all duration-150 bg-base-100 text-base-content rounded-md shadow border border-base-300 cursor-pointer" id="gpa-tab" onclick="showTab('gpa')">GPA Bands</a>
+          <a class="tab tab-md sm:tab-lg font-semibold px-4 sm:px-8 py-2 mx-1 transition-all duration-150 tab-active bg-primary text-primary-content rounded-md shadow-md border-2 border-primary cursor-pointer" id="wam-tab" onclick="showTab('wam')" style="margin-right: 0.5rem;" >WAM Bands</a>
+          <a class="tab tab-md sm:tab-lg font-semibold px-4 sm:px-8 py-2 mx-1 transition-all duration-150 bg-base-100 text-base-content rounded-md shadow border border-base-300 cursor-pointer" id="gpa-tab" onclick="showTab('gpa')">GPA Bands</a>
         </div>
       </div>
       <form action="/settings/grades/update" method="post" id="wam-form">
         <input type="hidden" name="band_type" value="wam" />
-        <div class="mb-4 flex items-center">
-          <label for="scale_name" class="mr-2 font-semibold">Scale Name:</label>
-          <input type="text" id="scale_name" name="scale_name" class="input input-bordered input-sm w-48" value="{{ current_scale_name }}" list="all_scale_names" required />
+        <div class="mb-4 flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full">
+          <label for="scale_name" class="font-semibold">Scale Name:</label>
+          <input type="text" id="scale_name" name="scale_name" class="input input-bordered input-sm w-full sm:w-48" value="{{ current_scale_name }}" list="all_scale_names" required />
           <datalist id="all_scale_names">
             {% for scale in all_scale_names %}
               <option value="{{ scale }}">{{ scale }}</option>
             {% endfor %}
           </datalist>
-          <span class="ml-2 text-xs opacity-60">(Type a new name to create a new scale)</span>
+          <span class="text-xs opacity-60">(Type a new name to create a new scale)</span>
         </div>
-        <div class="overflow-x-auto">
-          <table class="table table-zebra w-full">
+        <div class="w-full overflow-x-auto">
+          <table class="table table-zebra table-sm sm:table-md w-full">
             <thead>
               <tr>
                 <th>Grade (Code)</th>
                 <th>Label</th>
-                <th>Min Mark (%)</th>
-                <th></th>
+                <th class="text-center">Min Mark (%)</th>
+                <th class="w-px"></th>
               </tr>
             </thead>
             <tbody id="wam-grades-body">
               {% for scale in wam_bands %}
               <tr>
                 <td>
-                  <input type="text" name="grades" value="{{ scale.grade }}" class="input input-bordered input-sm w-20 font-bold" required />
+                  <input type="text" name="grades" value="{{ scale.grade }}" class="input input-bordered input-xs sm:input-sm w-16 sm:w-20 text-center tabular-nums font-bold" required />
                 </td>
                 <td>
-                  <input type="text" name="labels" value="{{ scale.label }}" class="input input-bordered input-sm w-full max-w-xs" required />
+                  <input type="text" name="labels" value="{{ scale.label }}" class="input input-bordered input-xs sm:input-sm w-full max-w-xs" required />
                 </td>
-                <td>
-                  <input type="number" name="min_marks" value="{{ scale.min_mark }}" step="0.01" min="0" max="100" class="input input-bordered input-sm w-24" required />
+                <td class="text-center">
+                  <input type="number" name="min_marks" value="{{ scale.min_mark }}" step="0.01" min="0" max="100" class="input input-bordered input-xs sm:input-sm w-16 sm:w-20 text-center tabular-nums" required />
                 </td>
-                <td>
+                <td class="w-px text-right">
                   <button type="button" class="btn btn-ghost btn-xs text-error" onclick="this.closest('tr').remove()">
                     ✕
                   </button>
@@ -95,50 +94,50 @@
             </tbody>
           </table>
         </div>
-        <div class="mt-4 flex justify-between items-center">
+        <div class="mt-4 flex flex-wrap justify-between items-center gap-2">
           <button type="button" class="btn btn-sm btn-outline" onclick="addGradeRow('wam-grades-body')">
             + Add Grade Band
           </button>
-          <button type="submit" class="btn btn-primary">
+          <button type="submit" class="btn btn-sm sm:btn-md btn-primary">
             Save WAM Bands
           </button>
         </div>
       </form>
       <form action="/settings/grades/update" method="post" id="gpa-form" style="display:none;">
         <input type="hidden" name="band_type" value="gpa" />
-        <div class="mb-4 flex items-center">
-          <label for="scale_name_gpa" class="mr-2 font-semibold">Scale Name:</label>
-          <input type="text" id="scale_name_gpa" name="scale_name" class="input input-bordered input-sm w-48" value="{{ current_scale_name }}" list="all_scale_names" required />
+        <div class="mb-4 flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full">
+          <label for="scale_name_gpa" class="font-semibold">Scale Name:</label>
+          <input type="text" id="scale_name_gpa" name="scale_name" class="input input-bordered input-sm w-full sm:w-48" value="{{ current_scale_name }}" list="all_scale_names" required />
           <datalist id="all_scale_names">
             {% for scale in all_scale_names %}
               <option value="{{ scale }}">{{ scale }}</option>
             {% endfor %}
           </datalist>
-          <span class="ml-2 text-xs opacity-60">(Type a new name to create a new scale)</span>
+          <span class="text-xs opacity-60">(Type a new name to create a new scale)</span>
         </div>
-        <div class="overflow-x-auto">
-          <table class="table table-zebra w-full">
+        <div class="w-full overflow-x-auto">
+          <table class="table table-zebra table-sm sm:table-md w-full">
             <thead>
               <tr>
                 <th>Grade (Code)</th>
                 <th>Label</th>
-                <th>GPA Point</th>
-                <th></th>
+                <th class="text-center">GPA Point</th>
+                <th class="w-px"></th>
               </tr>
             </thead>
             <tbody id="gpa-grades-body">
               {% for scale in gpa_bands %}
               <tr>
                 <td>
-                  <input type="text" name="grades" value="{{ scale.grade }}" class="input input-bordered input-sm w-20 font-bold" required />
+                  <input type="text" name="grades" value="{{ scale.grade }}" class="input input-bordered input-xs sm:input-sm w-16 sm:w-20 text-center tabular-nums font-bold" required />
                 </td>
                 <td>
-                  <input type="text" name="labels" value="{{ scale.label }}" class="input input-bordered input-sm w-full max-w-xs" required />
+                  <input type="text" name="labels" value="{{ scale.label }}" class="input input-bordered input-xs sm:input-sm w-full max-w-xs" required />
                 </td>
-                <td>
-                  <input type="number" name="gpa_points" value="{{ scale.gpa_point }}" step="0.01" min="0" max="7" class="input input-bordered input-sm w-24" required />
+                <td class="text-center">
+                  <input type="number" name="gpa_points" value="{{ scale.gpa_point }}" step="0.01" min="0" max="7" class="input input-bordered input-xs sm:input-sm w-16 sm:w-20 text-center tabular-nums" required />
                 </td>
-                <td>
+                <td class="w-px text-right">
                   <button type="button" class="btn btn-ghost btn-xs text-error" onclick="this.closest('tr').remove()">
                     ✕
                   </button>
@@ -148,11 +147,11 @@
             </tbody>
           </table>
         </div>
-        <div class="mt-4 flex justify-between items-center">
+        <div class="mt-4 flex flex-wrap justify-between items-center gap-2">
           <button type="button" class="btn btn-sm btn-outline" onclick="addGradeRow('gpa-grades-body')">
             + Add Grade Band
           </button>
-          <button type="submit" class="btn btn-primary">
+          <button type="submit" class="btn btn-sm sm:btn-md btn-primary">
             Save GPA Bands
           </button>
         </div>
@@ -174,17 +173,17 @@ function addGradeRow(tbodyId) {
   let html = '';
   if (tbodyId === 'wam-grades-body') {
     html = `
-      <td><input type="text" name="grades" class="input input-bordered input-sm w-20 font-bold" required placeholder="Code" /></td>
-      <td><input type="text" name="labels" class="input input-bordered input-sm w-full max-w-xs" required placeholder="Label" /></td>
-      <td><input type="number" name="min_marks" step="0.01" min="0" max="100" class="input input-bordered input-sm w-24" required placeholder="0-100" /></td>
-      <td><button type="button" class="btn btn-ghost btn-xs text-error" onclick="this.closest('tr').remove()">✕</button></td>
+      <td><input type="text" name="grades" class="input input-bordered input-xs sm:input-sm w-16 sm:w-20 text-center tabular-nums font-bold" required placeholder="Code" /></td>
+      <td><input type="text" name="labels" class="input input-bordered input-xs sm:input-sm w-full max-w-xs" required placeholder="Label" /></td>
+      <td class="text-center"><input type="number" name="min_marks" step="0.01" min="0" max="100" class="input input-bordered input-xs sm:input-sm w-16 sm:w-20 text-center tabular-nums" required placeholder="0-100" /></td>
+      <td class="w-px text-right"><button type="button" class="btn btn-ghost btn-xs text-error" onclick="this.closest('tr').remove()">✕</button></td>
     `;
   } else {
     html = `
-      <td><input type="text" name="grades" class="input input-bordered input-sm w-20 font-bold" required placeholder="Code" /></td>
-      <td><input type="text" name="labels" class="input input-bordered input-sm w-full max-w-xs" required placeholder="Label" /></td>
-      <td><input type="number" name="gpa_points" step="0.01" min="0" max="7" class="input input-bordered input-sm w-24" required placeholder="0.0" /></td>
-      <td><button type="button" class="btn btn-ghost btn-xs text-error" onclick="this.closest('tr').remove()">✕</button></td>
+      <td><input type="text" name="grades" class="input input-bordered input-xs sm:input-sm w-16 sm:w-20 text-center tabular-nums font-bold" required placeholder="Code" /></td>
+      <td><input type="text" name="labels" class="input input-bordered input-xs sm:input-sm w-full max-w-xs" required placeholder="Label" /></td>
+      <td class="text-center"><input type="number" name="gpa_points" step="0.01" min="0" max="7" class="input input-bordered input-xs sm:input-sm w-16 sm:w-20 text-center tabular-nums" required placeholder="0.0" /></td>
+      <td class="w-px text-right"><button type="button" class="btn btn-ghost btn-xs text-error" onclick="this.closest('tr').remove()">✕</button></td>
     `;
   }
   tr.innerHTML = html;
