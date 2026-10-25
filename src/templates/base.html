@@ -15,6 +15,9 @@
     <link rel="stylesheet" href="/static/css/sections/cards.css?v={{ current_year or 'v1' }}-m9" />
     <link rel="stylesheet" href="/static/css/style.css?v={{ current_year or 'v1' }}-m9" />
     <link rel="icon" href="/static/images/favicon.ico" type="image/x-icon" />
+    <link rel="apple-touch-icon" href="/static/images/icon_upscayl_6x_digital-art-4x.png" />
+    <link rel="manifest" href="/manifest.json" crossorigin="use-credentials" />
+    <meta name="theme-color" content="#4f46e5" />
   </head>
   <body class="min-h-screen bg-base-200">
     <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 btn btn-xs">Skip to content</a>
@@ -264,6 +267,14 @@
           if (doAuto) setTimeout(() => removeAlert(alert), 500);
         });
       })();
+
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function (err) {
+            console.warn('ServiceWorker registration failed:', err);
+          });
+        });
+      }
     </script>
   </body>
 </html>

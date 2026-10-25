@@ -1,7 +1,9 @@
 {
+  "id": "/",
   "name": "Marks Manager",
   "short_name": "Marks",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4f46e5",
@@ -26,4 +28,6 @@
       "purpose": "maskable"
     }
   ]
+}
+
 }

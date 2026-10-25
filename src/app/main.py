@@ -215,10 +215,18 @@ def healthz():
     return {"status": "ok"}
 
 @APPLICATION.get("/manifest.json", include_in_schema=False)
+@APPLICATION.get("/manifest.webmanifest", include_in_schema=False)
 async def serve_manifest():
-    return FileResponse(static_dir / "manifest.json")
+    return FileResponse(
+        static_dir / "manifest.json",
+        media_type="application/manifest+json",
+    )
 
 @APPLICATION.get("/sw.js", include_in_schema=False)
 async def serve_sw():
-    return FileResponse(static_dir / "sw.js")
+    return FileResponse(
+        static_dir / "sw.js",
+        media_type="application/javascript",
+        headers={"Service-Worker-Allowed": "/"},
+    )
 
